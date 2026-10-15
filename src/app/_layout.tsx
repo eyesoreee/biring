@@ -1,10 +1,14 @@
 import "@/global.css";
+import "@azure/core-asynciterator-polyfill";
 
+import { PowerSyncContext } from "@powersync/react";
 import { useFonts } from "expo-font";
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { useColorScheme } from "react-native";
+
+import { powersync } from "@/powersync/system";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -28,8 +32,10 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack />
-    </ThemeProvider>
+    <PowerSyncContext.Provider value={powersync}>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <Stack />
+      </ThemeProvider>
+    </PowerSyncContext.Provider>
   );
 }
