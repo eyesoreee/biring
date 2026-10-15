@@ -4,6 +4,14 @@ module.exports = {
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
+      fontFamily: {
+        // Weight is selected by family class (font-sans-semibold), never by
+        // font-weight classes — RN resolves faces by family, not fontWeight.
+        sans: ["PublicSans-Regular"],
+        "sans-medium": ["PublicSans-Medium"],
+        "sans-semibold": ["PublicSans-SemiBold"],
+        "sans-bold": ["PublicSans-Bold"],
+      },
       colors: {
         // Brand
         mint: "#2dd4a8", // bg-mint — primary buttons, active indicators, FAB
