@@ -1,9 +1,9 @@
 /*
  * Design tokens — pure vanilla CSS fallback for NativeWind.
  *
- * src/constants/theme.ts and the NativeWind classes (tailwind.config.js)
- * are the primary styling paths. Import this file only if NativeWind
- * has problems:   import '@/theme.css'   (in src/app/_layout.tsx)
+ * tailwind.config.js (NativeWind classes) is the primary styling path.
+ * Import this file only if NativeWind has problems:
+ *   import '@/theme.css'   (in src/app/_layout.tsx)
  *
  * Hex is the single source of truth (React Native only understands hex/rgb).
  * The oklch values below are derived from the hexes, NOT copied from the
