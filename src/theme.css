@@ -1,0 +1,89 @@
+/*
+ * Design tokens — pure vanilla CSS fallback for NativeWind.
+ *
+ * src/constants/theme.ts and the NativeWind classes (tailwind.config.js)
+ * are the primary styling paths. Import this file only if NativeWind
+ * has problems:   import '@/theme.css'   (in src/app/_layout.tsx)
+ *
+ * Hex is the single source of truth (React Native only understands hex/rgb).
+ * The oklch values below are derived from the hexes, NOT copied from the
+ * design table — the table's oklch column was internally inconsistent
+ * (e.g. #f5f6f7 listed as both oklch(0.922) and oklch(0.971)), so deriving
+ * from hex guarantees identical rendering on native and modern web.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* Brand */
+  --color-mint: #2dd4a8;
+  --color-mint-hover: #26c299;
+  --color-on-mint: #123329;
+  --color-destructive: #ef4444;
+
+  /* Selected surface */
+  --color-selected: #e6f9f3;
+  --color-selected-dark: #183329;
+
+  /* Graphite family (fixed — same value in both schemes) */
+  --color-graphite: #17191c;
+  --color-graphite-surface: #24272b;
+  --color-graphite-border: #33373d;
+
+  /* Neutrals (light scheme) */
+  --color-silver: #a6abb2;
+  --color-on-graphite: #f5f6f7;
+  --color-canvas: #f5f6f7;
+  --color-surface: #ffffff;
+  --color-text: #17191c;
+
+  /* Semantic aliases — flip with the scheme, mirrors
+   * bg-canvas dark:bg-graphite / bg-surface dark:bg-graphite-surface */
+  --bg-app: var(--color-canvas);
+  --bg-card: var(--color-surface);
+  --bg-selected-surface: var(--color-selected);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: #17191c;
+    --color-surface: #24272b;
+    --color-text: #f5f6f7;
+
+    --bg-app: var(--color-graphite);
+    --bg-card: var(--color-graphite-surface);
+    --bg-selected-surface: var(--color-selected-dark);
+  }
+}
+
+/* Modern-browser upgrade — same colors as the hexes above, just in oklch.
+ * Browsers without oklch support simply keep the hex values. */
+@supports (color: oklch(0 0 0)) {
+  :root {
+    --color-mint: oklch(0.778 0.145 170);
+    --color-mint-hover: oklch(0.728 0.137 170);
+    --color-on-mint: oklch(0.293 0.043 171);
+    --color-destructive: oklch(0.637 0.208 25);
+
+    --color-selected: oklch(0.966 0.021 175);
+    --color-selected-dark: oklch(0.296 0.038 168);
+
+    --color-graphite: oklch(0.213 0.007 258);
+    --color-graphite-surface: oklch(0.271 0.009 256);
+    --color-graphite-border: oklch(0.335 0.012 258);
+
+    --color-silver: oklch(0.739 0.012 257);
+    --color-on-graphite: oklch(0.973 0.002 248);
+    --color-canvas: oklch(0.973 0.002 248);
+    --color-surface: oklch(1 0 0);
+    --color-text: oklch(0.213 0.007 258);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-canvas: oklch(0.213 0.007 258);
+      --color-surface: oklch(0.271 0.009 256);
+      --color-text: oklch(0.973 0.002 248);
+    }
+  }
+}
