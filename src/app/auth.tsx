@@ -8,6 +8,7 @@ import { AppLogo } from "@/components/ui/AppLogo";
 import { BrandButton } from "@/components/ui/BrandButton";
 import { TextField } from "@/components/ui/TextField";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/theme/ThemeProvider";
 
 type AuthMode = "signin" | "signup";
@@ -36,6 +37,8 @@ export default function AuthScreen() {
   const [mode, setMode] = useState<AuthMode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const copy = COPY[mode];
 
@@ -44,14 +47,34 @@ export default function AuthScreen() {
       router.back();
       return;
     }
-    router.replace("/");
+    router.replace("/onboarding");
   }, [router]);
 
   const toggleMode = useCallback(() => {
+    setError(null);
     setMode((current) => (current === "signin" ? "signup" : "signin"));
   }, []);
 
-  const handleSubmit = useCallback(() => {}, []);
+  const handleSubmit = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const credentials = { email: email.trim(), password };
+      const { data, error } =
+        mode === "signin"
+          ? await supabase.auth.signInWithPassword(credentials)
+          : await supabase.auth.signUp(credentials);
+      if (error) throw error;
+      if (!data.session)
+        throw new Error(
+          "Email confirmation is enabled in Supabase — turn it off to sign up without confirming.",
+        );
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView
@@ -102,11 +125,23 @@ export default function AuthScreen() {
             autoCapitalize="none"
             autoComplete={mode === "signin" ? "password" : "new-password"}
             returnKeyType="done"
+            onSubmitEditing={handleSubmit}
           />
         </View>
 
+        {error ? (
+          <Text className="text-center font-sans text-[15px] text-destructive">
+            {error}
+          </Text>
+        ) : null}
+
         <View className="items-center gap-2">
-          <BrandButton fullWidth label={copy.cta} onPress={handleSubmit} />
+          <BrandButton
+            fullWidth
+            label={loading ? "One moment…" : copy.cta}
+            disabled={loading}
+            onPress={handleSubmit}
+          />
           <BrandButton
             variant="text"
             label={copy.toggle}

@@ -13,6 +13,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo } from "react";
 
+import { AuthProvider, useSession } from "@/lib/auth";
 import { powersync } from "@/powersync/system";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 
@@ -25,26 +26,24 @@ export default function RootLayout() {
     "PublicSans-SemiBold": require("../../assets/fonts/PublicSans-SemiBold.otf"),
     "PublicSans-Bold": require("../../assets/fonts/PublicSans-Bold.otf"),
   });
-
-  useEffect(() => {
-    if (loaded || error) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded, error]);
-
-  if (!loaded && !error) {
-    return null;
-  }
+  if (!loaded && !error) return null;
 
   return (
     <ThemeProvider>
-      <RootNavigator />
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
     </ThemeProvider>
   );
 }
 
 function RootNavigator() {
   const { scheme, colors } = useTheme();
+  const session = useSession();
+
+  useEffect(() => {
+    if (session !== undefined) SplashScreen.hideAsync();
+  }, [session]);
 
   const navigationTheme = useMemo(() => {
     const base = scheme === "dark" ? DarkTheme : DefaultTheme;
@@ -61,6 +60,8 @@ function RootNavigator() {
     };
   }, [scheme, colors]);
 
+  if (session === undefined) return null;
+
   return (
     <PowerSyncContext.Provider value={powersync}>
       <NavigationThemeProvider value={navigationTheme}>
@@ -71,7 +72,18 @@ function RootNavigator() {
             headerShown: false,
           }}
         >
-          <Stack.Screen name="auth" options={{ animation: "ios_from_right" }} />
+          <Stack.Protected guard={!session}>
+            <Stack.Screen name="onboarding" />
+            <Stack.Screen
+              name="auth"
+              options={{ animation: "ios_from_right" }}
+            />
+          </Stack.Protected>
+
+          <Stack.Protected guard={!!session}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="household/[id]" />
+          </Stack.Protected>
         </Stack>
       </NavigationThemeProvider>
     </PowerSyncContext.Provider>

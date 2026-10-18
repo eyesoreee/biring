@@ -1,49 +1,20 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { View, useWindowDimensions } from "react-native";
-import Animated, {
-  useAnimatedScrollHandler,
-  useSharedValue,
-} from "react-native-reanimated";
+import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { OnboardingDots } from "@/components/onboarding/OnboardingDots";
-import {
-  OnboardingSlide,
-  type OnboardingSlideContent,
-} from "@/components/onboarding/OnboardingSlide";
 import { AppLogo } from "@/components/ui/AppLogo";
-import { BrandButton } from "@/components/ui/BrandButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { useTheme } from "@/theme/ThemeProvider";
 
-const SLIDES: OnboardingSlideContent[] = [
-  {
-    icon: "link-outline",
-    title: "Track household expenses together",
-    subtitle:
-      "Add what you spend and see what everyone else adds — one shared list instead of scattered receipts.",
-  },
-  {
-    icon: "cloud-offline-outline",
-    title: "Keep logging when you're offline",
-    subtitle:
-      "No signal, no problem. Expenses save on your device and sync automatically when you're back online.",
-  },
-  {
-    icon: "lock-closed-outline",
-    title: "Only your household can see it",
-    subtitle:
-      "Join with an invite code and keep the books between members. Owners decide who stays.",
-  },
+const HOUSEHOLDS = [
+  { id: "dummy-home", name: "Home", members: 3 },
+  { id: "dummy-beach", name: "Beach house", members: 5 },
 ];
 
-export default function OnboardingScreen() {
-  const { width } = useWindowDimensions();
+export default function HouseholdsScreen() {
   const router = useRouter();
-  const offset = useSharedValue(0);
-
-  const onScroll = useAnimatedScrollHandler((event) => {
-    offset.value = event.contentOffset.x;
-  });
+  const { colors } = useTheme();
 
   return (
     <SafeAreaView
@@ -55,32 +26,41 @@ export default function OnboardingScreen() {
         <ThemeToggle />
       </View>
 
-      <Animated.ScrollView
-        horizontal
-        pagingEnabled
-        decelerationRate="fast"
-        disableIntervalMomentum
-        onScroll={onScroll}
-        className="flex-1"
-      >
-        {SLIDES.map((slide) => (
-          <View
-            key={slide.title}
-            style={{ width }}
-            className="items-center justify-center px-8"
-          >
-            <OnboardingSlide {...slide} />
-          </View>
-        ))}
-      </Animated.ScrollView>
+      <View className="flex-1 gap-3 px-6 pt-6">
+        <Text className="font-sans-bold text-3xl text-graphite dark:text-on-graphite">
+          Your households
+        </Text>
 
-      <View className="gap-4 px-6 pb-2 pt-3">
-        <OnboardingDots count={SLIDES.length} offset={offset} width={width} />
-        <BrandButton
-          fullWidth
-          label="Get started"
-          onPress={() => router.push("/auth")}
-        />
+        {HOUSEHOLDS.map((household) => (
+          <Pressable
+            key={household.id}
+            onPress={() =>
+              router.push({
+                pathname: "/household/[id]",
+                params: { id: household.id },
+              })
+            }
+            className="active:opacity-80 flex-row items-center justify-between rounded-2xl border border-edge bg-surface px-5 py-4 dark:border-graphite-border dark:bg-graphite-surface"
+          >
+            <View>
+              <Text className="font-sans-semibold text-lg text-graphite dark:text-on-graphite">
+                {household.name}
+              </Text>
+              <Text className="font-sans text-sm text-muted dark:text-silver">
+                {household.members} members
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textMuted}
+            />
+          </Pressable>
+        ))}
+
+        <Text className="mt-1 text-center font-sans text-sm text-placeholder dark:text-placeholder-dark">
+          Real households from your account land here next.
+        </Text>
       </View>
     </SafeAreaView>
   );
