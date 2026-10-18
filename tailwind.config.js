@@ -33,6 +33,10 @@ module.exports = {
         "on-graphite": "#f5f6f7", // text-on-graphite — light text on dark
         canvas: "#f5f6f7", // bg-canvas — app background (use dark:bg-graphite in dark mode)
         surface: "#ffffff", // bg-surface — cards/modals (use dark:bg-graphite-surface)
+        edge: "#e2e5e8", // border-edge — hairlines (use dark:border-graphite-border)
+        muted: "#6a7078", // text-muted — secondary text (use dark:text-silver)
+        placeholder: "#9aa0a6", // placeholder:text-placeholder (use dark:placeholder:text-placeholder-dark)
+        "placeholder-dark": "#7f858d", // dark:placeholder:text-placeholder-dark
       },
     },
   },

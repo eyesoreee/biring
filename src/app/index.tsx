@@ -1,15 +1,87 @@
-import { Text, View } from 'react-native';
+import { useRouter } from "expo-router";
+import { View, useWindowDimensions } from "react-native";
+import Animated, {
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function HomeScreen() {
+import { OnboardingDots } from "@/components/onboarding/OnboardingDots";
+import {
+  OnboardingSlide,
+  type OnboardingSlideContent,
+} from "@/components/onboarding/OnboardingSlide";
+import { AppLogo } from "@/components/ui/AppLogo";
+import { BrandButton } from "@/components/ui/BrandButton";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+
+const SLIDES: OnboardingSlideContent[] = [
+  {
+    icon: "link-outline",
+    title: "Track household expenses together",
+    subtitle:
+      "Add what you spend and see what everyone else adds — one shared list instead of scattered receipts.",
+  },
+  {
+    icon: "cloud-offline-outline",
+    title: "Keep logging when you're offline",
+    subtitle:
+      "No signal, no problem. Expenses save on your device and sync automatically when you're back online.",
+  },
+  {
+    icon: "lock-closed-outline",
+    title: "Only your household can see it",
+    subtitle:
+      "Join with an invite code and keep the books between members. Owners decide who stays.",
+  },
+];
+
+export default function OnboardingScreen() {
+  const { width } = useWindowDimensions();
+  const router = useRouter();
+  const offset = useSharedValue(0);
+
+  const onScroll = useAnimatedScrollHandler((event) => {
+    offset.value = event.contentOffset.x;
+  });
+
   return (
-    <View className="flex-1 items-center justify-center bg-canvas dark:bg-graphite">
-      <View className="h-12 w-12 items-center justify-center rounded-full bg-mint">
-        <Text className="text-lg font-bold text-on-mint">b</Text>
+    <SafeAreaView
+      edges={["top", "bottom"]}
+      className="flex-1 bg-canvas dark:bg-graphite"
+    >
+      <View className="flex-row items-center justify-between px-6 pt-2">
+        <AppLogo />
+        <ThemeToggle />
       </View>
-      <Text className="mt-4 text-xl font-semibold text-graphite dark:text-on-graphite">
-        biring
-      </Text>
-      <Text className="mt-1 text-sm text-silver">Start building</Text>
-    </View>
+
+      <Animated.ScrollView
+        horizontal
+        pagingEnabled
+        decelerationRate="fast"
+        disableIntervalMomentum
+        onScroll={onScroll}
+        className="flex-1"
+      >
+        {SLIDES.map((slide) => (
+          <View
+            key={slide.title}
+            style={{ width }}
+            className="items-center justify-center px-8"
+          >
+            <OnboardingSlide {...slide} />
+          </View>
+        ))}
+      </Animated.ScrollView>
+
+      <View className="gap-4 px-6 pb-2 pt-3">
+        <OnboardingDots count={SLIDES.length} offset={offset} width={width} />
+        <BrandButton
+          fullWidth
+          label="Get started"
+          onPress={() => router.push("/auth")}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
