@@ -1,15 +1,14 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppLogo } from "@/components/ui/AppLogo";
+import { BackButton } from "@/components/ui/BackButton";
 import { BrandButton } from "@/components/ui/BrandButton";
 import { TextField } from "@/components/ui/TextField";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { supabase } from "@/lib/supabase";
-import { useTheme } from "@/theme/ThemeProvider";
 
 type AuthMode = "signin" | "signup";
 
@@ -32,7 +31,6 @@ const COPY: Record<
 };
 
 export default function AuthScreen() {
-  const { colors } = useTheme();
   const router = useRouter();
   const [mode, setMode] = useState<AuthMode>("signin");
   const [email, setEmail] = useState("");
@@ -87,12 +85,7 @@ export default function AuthScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View className="flex-row items-center justify-between">
-          <Pressable
-            onPress={handleBack}
-            className="active:opacity-60 h-10 w-10 items-center justify-center rounded-full border border-edge bg-surface dark:border-graphite-border dark:bg-graphite-surface"
-          >
-            <Ionicons name="arrow-back" size={20} color={colors.text} />
-          </Pressable>
+          <BackButton onPress={handleBack} />
           <ThemeToggle />
         </View>
 
@@ -130,7 +123,7 @@ export default function AuthScreen() {
         </View>
 
         {error ? (
-          <Text className="text-center font-sans text-[15px] text-destructive">
+          <Text className="text-center font-sans text-lg text-destructive">
             {error}
           </Text>
         ) : null}

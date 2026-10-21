@@ -79,7 +79,7 @@ export default function OnboardingScreen() {
         <BrandButton
           fullWidth
           label="Get started"
-          onPress={() => router.push("/auth")}
+          onPress={() => router.navigate("/auth")}
         />
       </View>
     </SafeAreaView>

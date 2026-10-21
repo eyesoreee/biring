@@ -82,6 +82,14 @@ function RootNavigator() {
 
           <Stack.Protected guard={!!session}>
             <Stack.Screen name="index" />
+            <Stack.Screen
+              name="household/create"
+              options={{ animation: "slide_from_bottom" }}
+            />
+            <Stack.Screen
+              name="household/join"
+              options={{ animation: "slide_from_bottom" }}
+            />
             <Stack.Screen name="household/[id]" />
           </Stack.Protected>
         </Stack>
