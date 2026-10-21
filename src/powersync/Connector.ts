@@ -51,6 +51,7 @@ export class Connector implements PowerSyncBackendConnector {
         console.error("Data upload error - discarding:", lastOp, e);
         await tx.complete();
       } else {
+        throw e;
       }
     }
   }

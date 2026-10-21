@@ -4,6 +4,7 @@ import { Pressable, Text } from "react-native";
 type BrandButtonProps = {
   label: string;
   onPress: () => void;
+  onPressIn?: () => void;
   variant?: "filled" | "outlined" | "text";
   disabled?: boolean;
   fullWidth?: boolean;
@@ -12,6 +13,7 @@ type BrandButtonProps = {
 export function BrandButton({
   label,
   onPress,
+  onPressIn,
   variant = "filled",
   disabled,
   fullWidth,
@@ -39,7 +41,10 @@ export function BrandButton({
     <Pressable
       disabled={disabled}
       onPress={onPress}
-      onPressIn={() => setPressed(true)}
+      onPressIn={() => {
+        setPressed(true);
+        onPressIn?.();
+      }}
       onPressOut={() => setPressed(false)}
       className={`items-center justify-center rounded-full border px-7 py-3 ${variantClass} ${fullWidth ? "self-stretch" : ""} ${disabled ? "opacity-40" : ""}`}
     >
