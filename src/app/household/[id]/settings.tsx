@@ -8,6 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BackButton } from "@/components/ui/BackButton";
 import { BrandButton } from "@/components/ui/BrandButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ArchiveSheet } from "@/features/household/components/ArchiveSheet";
 import { InviteSheet } from "@/features/household/components/InviteSheet";
 import { MemberRow } from "@/features/household/components/MemberRow";
 import { NicknameSheet } from "@/features/household/components/NicknameSheet";
@@ -33,6 +34,7 @@ export default function SettingsScreen() {
   const [draft, setDraft] = useState("");
   const [editing, setEditing] = useState(false);
   const [inviting, setInviting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const openNickname = () => {
@@ -67,29 +69,18 @@ export default function SettingsScreen() {
     }
   };
 
-  const archive = () => {
-    Alert.alert(
-      "Archive household?",
-      "It disappears from your list and can't be restored in the app.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Archive",
-          style: "destructive",
-          onPress: async () => {
-            setBusy(true);
-            try {
-              await rpc("archive_household", { p_household_id: id });
-              router.navigate("/");
-            } catch (cause) {
-              alertError("Can't archive household", cause);
-            } finally {
-              setBusy(false);
-            }
-          },
-        },
-      ],
-    );
+  const archive = async () => {
+    setBusy(true);
+    try {
+      await rpc("archive_household", { p_household_id: id });
+      setConfirming(false);
+      router.navigate("/");
+    } catch (cause) {
+      setConfirming(false);
+      alertError("Can't archive household", cause);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -197,7 +188,7 @@ export default function SettingsScreen() {
               variant="destructive"
               label="Archive household"
               disabled={busy || offline || !canArchive}
-              onPress={archive}
+              onPress={() => setConfirming(true)}
             />
           ) : null}
           {me?.role === "owner" && !canArchive ? (
@@ -220,6 +211,14 @@ export default function SettingsScreen() {
         visible={inviting}
         onClose={() => setInviting(false)}
         household={household}
+      />
+
+      <ArchiveSheet
+        visible={confirming}
+        name={household?.name}
+        busy={busy}
+        onClose={() => setConfirming(false)}
+        onArchive={archive}
       />
     </SafeAreaView>
   );
