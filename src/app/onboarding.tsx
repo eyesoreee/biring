@@ -6,14 +6,14 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { OnboardingDots } from "@/components/onboarding/OnboardingDots";
-import {
-  OnboardingSlide,
-  type OnboardingSlideContent,
-} from "@/components/onboarding/OnboardingSlide";
 import { AppLogo } from "@/components/ui/AppLogo";
 import { BrandButton } from "@/components/ui/BrandButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { OnboardingDots } from "@/features/onboarding/components/OnboardingDots";
+import {
+  OnboardingSlide,
+  type OnboardingSlideContent,
+} from "@/features/onboarding/components/OnboardingSlide";
 
 const SLIDES: OnboardingSlideContent[] = [
   {

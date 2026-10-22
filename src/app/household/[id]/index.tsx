@@ -1,32 +1,12 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
-import { Alert, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppLogo } from "@/components/ui/AppLogo";
-import { BrandButton } from "@/components/ui/BrandButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { logout } from "@/powersync/system";
+import { useHousehold } from "@/features/household/HouseholdProvider";
 
 export default function HomeScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-
-  const handleLogout = async () => {
-    setBusy(true);
-    try {
-      await logout();
-      router.replace("/auth");
-    } catch (cause) {
-      Alert.alert(
-        "Can't log out",
-        cause instanceof Error ? cause.message : "Please try again.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
+  const { id } = useHousehold();
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-canvas dark:bg-graphite">
@@ -47,16 +27,6 @@ export default function HomeScreen() {
         <Text className="text-center font-sans text-base text-placeholder dark:text-placeholder-dark">
           Household dashboard lands here next.
         </Text>
-      </View>
-
-      <View className="px-6 pb-4">
-        <BrandButton
-          fullWidth
-          variant="outlined"
-          label={busy ? "Logging out…" : "Log out"}
-          disabled={busy}
-          onPress={handleLogout}
-        />
       </View>
     </SafeAreaView>
   );

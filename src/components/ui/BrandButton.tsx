@@ -5,7 +5,7 @@ type BrandButtonProps = {
   label: string;
   onPress: () => void;
   onPressIn?: () => void;
-  variant?: "filled" | "outlined" | "text";
+  variant?: "filled" | "outlined" | "text" | "destructive";
   disabled?: boolean;
   fullWidth?: boolean;
 };
@@ -35,7 +35,9 @@ export function BrandButton({
     ? "text-on-mint"
     : isOutlined
       ? "text-graphite dark:text-on-graphite"
-      : "text-mint";
+      : variant === "destructive"
+        ? "text-destructive"
+        : "text-mint";
 
   return (
     <Pressable
