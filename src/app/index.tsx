@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useStatus } from "@powersync/react";
 import { useRouter } from "expo-router";
-import { Text, View } from "react-native";
+import { useState } from "react";
+import { Alert, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppLogo } from "@/components/ui/AppLogo";
@@ -12,6 +13,7 @@ import { formatMoney, monthBounds, MONTHS } from "@/features/household/format";
 import { HOUSEHOLDS_SQL } from "@/features/household/sql";
 import type { HouseholdListItem } from "@/features/household/types";
 import { useSession } from "@/lib/auth";
+import { logout } from "@/powersync/system";
 import { useTheme } from "@/theme/ThemeProvider";
 
 export default function HouseholdsScreen() {
@@ -28,6 +30,22 @@ export default function HouseholdsScreen() {
     session?.user.id ?? "",
   ]);
   const offline = !connected;
+  const [signingOut, setSigningOut] = useState(false);
+
+  const signOut = async () => {
+    setSigningOut(true);
+    try {
+      await logout();
+      router.replace("/auth");
+    } catch (cause) {
+      Alert.alert(
+        "Can't sign out",
+        cause instanceof Error ? cause.message : "Please try again.",
+      );
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   return (
     <SafeAreaView
@@ -85,7 +103,7 @@ export default function HouseholdsScreen() {
       <View className="gap-2 px-6 pb-4">
         {offline ? (
           <Text className="text-center font-sans text-lg text-muted dark:text-silver">
-            Creating or joining a household needs a connection.
+            Creating, joining, and signing out need a connection.
           </Text>
         ) : null}
         <BrandButton
@@ -100,6 +118,15 @@ export default function HouseholdsScreen() {
           disabled={offline}
           onPress={() => router.navigate("/household/join")}
         />
+        <View className="mt-2 border-t border-edge pt-4 dark:border-graphite-border">
+          <BrandButton
+            fullWidth
+            variant="outlined"
+            label={signingOut ? "Signing out…" : "Sign out"}
+            disabled={signingOut || offline}
+            onPress={signOut}
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
