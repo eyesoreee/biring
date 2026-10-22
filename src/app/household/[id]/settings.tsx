@@ -1,24 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useStatus } from "@powersync/react";
 import { useRouter } from "expo-router";
-import { useState, type ReactNode } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Modal,
-  Pressable,
-  ScrollView,
-  Share,
-  Text,
-  View,
-} from "react-native";
+import { useState } from "react";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BackButton } from "@/components/ui/BackButton";
 import { BrandButton } from "@/components/ui/BrandButton";
-import { TextField } from "@/components/ui/TextField";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { useHousehold } from "@/lib/household";
+import { InviteSheet } from "@/features/household/components/InviteSheet";
+import { MemberRow } from "@/features/household/components/MemberRow";
+import { NicknameSheet } from "@/features/household/components/NicknameSheet";
+import { useHousehold } from "@/features/household/HouseholdProvider";
 import { rpc } from "@/powersync/rpc";
 import { logout, powersync } from "@/powersync/system";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -28,39 +21,6 @@ const alertError = (title: string, cause: unknown) =>
     title,
     cause instanceof Error ? cause.message : "Please try again.",
   );
-
-function Sheet({
-  visible,
-  onClose,
-  children,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <KeyboardAvoidingView behavior="height" className="flex-1">
-        <Pressable
-          onPress={onClose}
-          className="flex-1 justify-center bg-black/50 px-6"
-        >
-          <Pressable
-            onPress={() => {}}
-            className="gap-4 rounded-2xl border border-edge bg-surface p-5 dark:border-graphite-border dark:bg-graphite"
-          >
-            {children}
-          </Pressable>
-        </Pressable>
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-}
 
 export default function SettingsScreen() {
   const { id, household, members, me } = useHousehold();
@@ -93,13 +53,6 @@ export default function SettingsScreen() {
     } catch (cause) {
       alertError("Can't save nickname", cause);
     }
-  };
-
-  const shareInvite = () => {
-    if (!household) return;
-    Share.share({
-      message: `Join ${household.name} on biring with this invite code: ${household.invite_code}`,
-    }).catch(() => {});
   };
 
   const signOut = async () => {
@@ -160,53 +113,14 @@ export default function SettingsScreen() {
             Family members
           </Text>
           <View className="overflow-hidden rounded-2xl border border-edge bg-surface dark:border-graphite-border dark:bg-graphite-surface">
-            {members.map((member) => {
-              const isMe = member.id === me?.id;
-              return (
-                <View
-                  key={member.id}
-                  className="flex-row items-center gap-3 border-b border-edge px-4 py-3 dark:border-graphite-border"
-                >
-                  <View className="h-11 w-11 items-center justify-center rounded-full bg-selected dark:bg-selected-dark">
-                    <Text className="font-sans-semibold text-base text-mint">
-                      {member.nickname.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View className="flex-1 gap-0.5">
-                    <Text
-                      numberOfLines={1}
-                      className="font-sans-semibold text-lg text-graphite dark:text-on-graphite"
-                    >
-                      {member.nickname}
-                      {isMe ? (
-                        <Text className="font-sans text-muted dark:text-silver">
-                          {" "}
-                          (you)
-                        </Text>
-                      ) : null}
-                    </Text>
-                    <Text className="font-sans text-sm text-muted dark:text-silver">
-                      {member.role === "owner" ? "Owner" : "Member"}
-                    </Text>
-                  </View>
-                  {isMe ? (
-                    <Pressable
-                      onPress={openNickname}
-                      hitSlop={8}
-                      accessibilityRole="button"
-                      accessibilityLabel="Change nickname"
-                      className="active:opacity-60 h-10 w-10 items-center justify-center"
-                    >
-                      <Ionicons
-                        name="pencil-outline"
-                        size={18}
-                        color={colors.textMuted}
-                      />
-                    </Pressable>
-                  ) : null}
-                </View>
-              );
-            })}
+            {members.map((member) => (
+              <MemberRow
+                key={member.id}
+                member={member}
+                isMe={member.id === me?.id}
+                onEditNickname={openNickname}
+              />
+            ))}
 
             <Pressable
               onPress={() => setInviting(true)}
@@ -294,61 +208,19 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
 
-      <Sheet visible={editing} onClose={() => setEditing(false)}>
-        <Text className="font-sans-semibold text-2xl text-graphite dark:text-on-graphite">
-          Change nickname
-        </Text>
-        <TextField
-          value={draft}
-          onChangeText={setDraft}
-          placeholder="How they'll see you"
-          autoCapitalize="words"
-          autoCorrect={false}
-          maxLength={24}
-          autoFocus
-          returnKeyType="done"
-          onSubmitEditing={saveNickname}
-        />
-        <View className="flex-row justify-end gap-2">
-          <BrandButton
-            variant="text"
-            label="Cancel"
-            onPress={() => setEditing(false)}
-          />
-          <BrandButton
-            label="Save"
-            disabled={!draft.trim()}
-            onPress={saveNickname}
-          />
-        </View>
-      </Sheet>
+      <NicknameSheet
+        visible={editing}
+        value={draft}
+        onChangeText={setDraft}
+        onClose={() => setEditing(false)}
+        onSave={saveNickname}
+      />
 
-      <Sheet visible={inviting} onClose={() => setInviting(false)}>
-        <Text className="font-sans-semibold text-2xl text-graphite dark:text-on-graphite">
-          Invite a family member
-        </Text>
-        <Text className="font-sans text-base text-muted dark:text-silver">
-          Anyone with this code can join this household.
-        </Text>
-        <Text
-          selectable
-          className="rounded-2xl border border-edge bg-canvas px-4 py-3 text-center font-sans-medium text-lg tracking-wider text-graphite dark:border-graphite-border dark:bg-graphite-surface dark:text-on-graphite"
-        >
-          {household?.invite_code ?? "—"}
-        </Text>
-        <View className="flex-row justify-end gap-2">
-          <BrandButton
-            variant="text"
-            label="Close"
-            onPress={() => setInviting(false)}
-          />
-          <BrandButton
-            label="Share"
-            disabled={!household}
-            onPress={shareInvite}
-          />
-        </View>
-      </Sheet>
+      <InviteSheet
+        visible={inviting}
+        onClose={() => setInviting(false)}
+        household={household}
+      />
     </SafeAreaView>
   );
 }

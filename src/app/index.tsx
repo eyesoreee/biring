@@ -6,61 +6,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppLogo } from "@/components/ui/AppLogo";
 import { BrandButton } from "@/components/ui/BrandButton";
-import { HouseholdRow } from "@/components/ui/HouseholdRow";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { HouseholdRow } from "@/features/household/components/HouseholdRow";
+import { formatMoney, monthBounds, MONTHS } from "@/features/household/format";
+import { HOUSEHOLDS_SQL } from "@/features/household/sql";
+import type { HouseholdListItem } from "@/features/household/types";
 import { useSession } from "@/lib/auth";
 import { useTheme } from "@/theme/ThemeProvider";
-
-const stamp = (d: Date) => d.toISOString().replace("T", " ");
-
-const HOUSEHOLDS_SQL = `
-  SELECT h.id, h.name, h.currency_code,
-    (SELECT COUNT(*) FROM household_member mm
-      WHERE mm.household_id = h.id AND mm.left_at IS NULL) AS members,
-    (SELECT ROUND(SUM(CAST(e.amount AS REAL)), 2) FROM expense e
-      WHERE e.household_id = h.id AND e.voided_at IS NULL
-        AND datetime(e.spent_at) >= datetime(?) AND datetime(e.spent_at) < datetime(?)) AS month_total
-  FROM household h
-  JOIN household_member m ON m.household_id = h.id
-  WHERE m.user_id = ? AND m.left_at IS NULL AND h.deleted_at IS NULL
-  ORDER BY h.name`;
-
-type Household = {
-  id: string;
-  name: string;
-  currency_code: string;
-  members: number;
-  month_total: number | null;
-};
-
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  PHP: "₱",
-  USD: "$",
-  EUR: "€",
-  GBP: "£",
-  JPY: "¥",
-};
-
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-function formatMoney(total: number | null, currency: string) {
-  const [whole, cents] = (total ?? 0).toFixed(2).split(".");
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return `${CURRENCY_SYMBOLS[currency] ?? `${currency} `}${grouped}.${cents}`;
-}
 
 export default function HouseholdsScreen() {
   const router = useRouter();
@@ -69,9 +21,8 @@ export default function HouseholdsScreen() {
   const { connected, hasSynced } = useStatus();
 
   const now = new Date();
-  const monthStart = stamp(new Date(now.getFullYear(), now.getMonth(), 1));
-  const monthEnd = stamp(new Date(now.getFullYear(), now.getMonth() + 1, 1));
-  const { data: households } = useQuery<Household>(HOUSEHOLDS_SQL, [
+  const { monthStart, monthEnd } = monthBounds(now);
+  const { data: households } = useQuery<HouseholdListItem>(HOUSEHOLDS_SQL, [
     monthStart,
     monthEnd,
     session?.user.id ?? "",

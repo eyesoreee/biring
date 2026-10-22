@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppLogo } from "@/components/ui/AppLogo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { useHousehold } from "@/lib/household";
+import { useHousehold } from "@/features/household/HouseholdProvider";
 
 export default function HomeScreen() {
   const { id } = useHousehold();

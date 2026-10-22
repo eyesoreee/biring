@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useLocalSearchParams } from "expo-router";
 
-import { BottomTabBar } from "@/components/ui/BottomTabBar";
-import { HouseholdProvider } from "@/lib/household";
+import { BottomTabBar } from "@/features/household/components/BottomTabBar";
+import { HouseholdProvider } from "@/features/household/HouseholdProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 
 export default function TabsLayout() {
