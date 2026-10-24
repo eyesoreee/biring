@@ -27,11 +27,25 @@ export function formatMoney(total: number | null, currency: string) {
   return `${CURRENCY_SYMBOLS[currency] ?? `${currency} `}${grouped}.${cents}`;
 }
 
-const stamp = (date: Date) => date.toISOString().replace("T", " ");
+export function currencySymbol(currency: string) {
+  return CURRENCY_SYMBOLS[currency] ?? currency;
+}
+
+export function formatExpenseDate(date: Date) {
+  return `${MONTHS[date.getMonth()].slice(0, 3)} ${date.getDate()}, ${date.getFullYear()}`;
+}
+
+export function toSqlTimestamp(date: Date) {
+  return date.toISOString().replace("T", " ");
+}
 
 export function monthBounds(date: Date) {
   return {
-    monthStart: stamp(new Date(date.getFullYear(), date.getMonth(), 1)),
-    monthEnd: stamp(new Date(date.getFullYear(), date.getMonth() + 1, 1)),
+    monthStart: toSqlTimestamp(
+      new Date(date.getFullYear(), date.getMonth(), 1),
+    ),
+    monthEnd: toSqlTimestamp(
+      new Date(date.getFullYear(), date.getMonth() + 1, 1),
+    ),
   };
 }

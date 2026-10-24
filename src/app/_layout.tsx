@@ -91,6 +91,10 @@ function RootNavigator() {
               options={{ animation: "slide_from_bottom" }}
             />
             <Stack.Screen name="household/[id]" />
+            <Stack.Screen
+              name="expense/new"
+              options={{ animation: "slide_from_bottom" }}
+            />
           </Stack.Protected>
         </Stack>
       </NavigationThemeProvider>
