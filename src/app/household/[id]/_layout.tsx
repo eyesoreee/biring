@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs, useLocalSearchParams } from "expo-router";
+import { Tabs, useLocalSearchParams, useRouter } from "expo-router";
 
 import { BottomTabBar } from "@/features/household/components/BottomTabBar";
 import { HouseholdProvider } from "@/features/household/HouseholdProvider";
 import { useTheme } from "@/theme/ThemeProvider";
 
 export default function TabsLayout() {
+  const router = useRouter();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -14,7 +15,14 @@ export default function TabsLayout() {
   return (
     <HouseholdProvider id={id}>
       <Tabs
-        tabBar={(props) => <BottomTabBar {...props} />}
+        tabBar={(props) => (
+          <BottomTabBar
+            {...props}
+            onAddExpense={() =>
+              router.push({ pathname: "/expense/new", params: { id } })
+            }
+          />
+        )}
         screenOptions={{
           headerShown: false,
           sceneStyle: { backgroundColor: colors.background },

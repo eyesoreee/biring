@@ -34,6 +34,7 @@ export const TOP_CATEGORIES_SQL = `
   LIMIT 2`;
 
 export const RECENT_EXPENSES_SQL = `
+export const EXPENSES_SQL = `
   SELECT e.id, e.title, e.amount, e.category, e.spent_at, e.spender_id,
          m.nickname AS spender_nickname
   FROM expense e
@@ -43,3 +44,9 @@ export const RECENT_EXPENSES_SQL = `
     AND datetime(e.spent_at) >= datetime(?) AND datetime(e.spent_at) < datetime(?)
   ORDER BY e.spent_at DESC
   LIMIT 5`;
+  ORDER BY e.spent_at DESC`;
+
+export const EDIT_EXPENSE_SQL = `
+  SELECT id, title, amount, category, note, spent_at
+  FROM expense
+  WHERE id = ? AND household_id = ? AND voided_at IS NULL`;

@@ -9,12 +9,17 @@ const BAR_HEIGHT = 64;
 const FAB_SIZE = 52;
 const NOTCH_WIDTH = 48;
 
+type Props = BottomTabBarProps & {
+  onAddExpense: () => void;
+};
+
 export function BottomTabBar({
   state,
   descriptors,
   navigation,
   insets,
-}: BottomTabBarProps) {
+  onAddExpense,
+}: Props) {
   const { colors } = useTheme();
 
   return (
@@ -65,7 +70,7 @@ export function BottomTabBar({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Add expense"
-        onPress={() => {}}
+        onPress={onAddExpense}
         className="active:opacity-90 absolute items-center justify-center rounded-full bg-mint"
         style={{
           width: FAB_SIZE,
