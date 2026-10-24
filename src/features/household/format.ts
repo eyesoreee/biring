@@ -39,6 +39,10 @@ export function toSqlTimestamp(date: Date) {
   return date.toISOString().replace("T", " ");
 }
 
+export function fromSqlTimestamp(value: string) {
+  return new Date(value.replace(" ", "T"));
+}
+
 export function monthBounds(date: Date) {
   return {
     monthStart: toSqlTimestamp(

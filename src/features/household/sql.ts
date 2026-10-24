@@ -17,3 +17,18 @@ export const MEMBERS_SQL = `
   SELECT id, user_id, nickname, role FROM household_member
   WHERE household_id = ? AND left_at IS NULL
   ORDER BY role = 'owner' DESC, nickname COLLATE NOCASE`;
+
+export const EXPENSES_SQL = `
+  SELECT e.id, e.title, e.amount, e.category, e.spent_at, e.spender_id,
+         m.nickname AS spender_nickname
+  FROM expense e
+  LEFT JOIN household_member m
+    ON m.household_id = e.household_id AND m.user_id = e.spender_id
+  WHERE e.household_id = ? AND e.voided_at IS NULL
+    AND datetime(e.spent_at) >= datetime(?) AND datetime(e.spent_at) < datetime(?)
+  ORDER BY e.spent_at DESC`;
+
+export const EDIT_EXPENSE_SQL = `
+  SELECT id, title, amount, category, note, spent_at
+  FROM expense
+  WHERE id = ? AND household_id = ? AND voided_at IS NULL`;

@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
+  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -20,42 +21,52 @@ import { Sheet } from "@/components/ui/Sheet";
 import { TextField } from "@/components/ui/TextField";
 import {
   addExpense,
+  editExpense,
   isValidAmount,
   normalizeAmountInput,
+  voidExpense,
 } from "@/features/household/expenses";
-import { currencySymbol, formatExpenseDate } from "@/features/household/format";
+import {
+  currencySymbol,
+  formatExpenseDate,
+  fromSqlTimestamp,
+} from "@/features/household/format";
 import { useHousehold } from "@/features/household/HouseholdProvider";
+import type { EditableExpense } from "@/features/household/types";
 import { useTheme } from "@/theme/ThemeProvider";
 
-export function AddExpenseForm() {
+export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
   const router = useRouter();
-  const { colors, scheme } = useTheme();
+  const { colors } = useTheme();
   const { id, household, me } = useHousehold();
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("");
-  const [date, setDate] = useState(() => new Date());
-  const [title, setTitle] = useState("");
-  const [note, setNote] = useState("");
+  const [amount, setAmount] = useState(expense?.amount ?? "");
+  const [category, setCategory] = useState(expense?.category ?? "");
+  const [date, setDate] = useState(() =>
+    expense ? fromSqlTimestamp(expense.spent_at) : new Date(),
+  );
+  const [title, setTitle] = useState(expense?.title ?? "");
+  const [note, setNote] = useState(expense?.note ?? "");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [amountFocused, setAmountFocused] = useState(false);
   const [noteFocused, setNoteFocused] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showVoid, setShowVoid] = useState(false);
+  const [voidReason, setVoidReason] = useState("");
+  const [voiding, setVoiding] = useState(false);
 
   const currency = household?.currency_code ?? "PHP";
   const amountValid = isValidAmount(amount);
   const canSave =
     amountValid && !!category.trim() && !!title.trim() && !!me && !saving;
+  const canVoid = !!expense && me?.role === "owner";
   const missingRequired = !amountValid || !category.trim() || !title.trim();
   const showAmountError = !!amount && !amountValid && !amountFocused;
   const formattedDate = formatExpenseDate(date);
 
   const close = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace({ pathname: "/household/[id]", params: { id } });
-    }
+    if (router.canGoBack()) router.back();
+    else router.replace({ pathname: "/household/[id]", params: { id } });
   };
 
   const handleSave = async () => {
@@ -65,13 +76,9 @@ export function AddExpenseForm() {
     setError(null);
     setSaving(true);
     try {
-      await addExpense(id, me.user_id, {
-        title,
-        amount,
-        category,
-        note,
-        spentAt: date,
-      });
+      const input = { title, amount, category, note, spentAt: date };
+      if (expense) await editExpense(expense.id, input);
+      else await addExpense(id, me.user_id, input);
       close();
     } catch (cause) {
       setError(
@@ -79,6 +86,25 @@ export function AddExpenseForm() {
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleVoid = async () => {
+    if (!expense || !canVoid || voiding) return;
+
+    Keyboard.dismiss();
+    setVoiding(true);
+    try {
+      await voidExpense(expense.id, voidReason);
+      setShowVoid(false);
+      close();
+    } catch (cause) {
+      Alert.alert(
+        "Can't void expense",
+        cause instanceof Error ? cause.message : "Please try again.",
+      );
+    } finally {
+      setVoiding(false);
     }
   };
 
@@ -103,10 +129,12 @@ export function AddExpenseForm() {
 
           <View className="gap-2">
             <Text className="font-sans-bold text-4xl text-graphite dark:text-on-graphite">
-              Add expense
+              {expense ? "Edit expense" : "Add expense"}
             </Text>
             <Text className="font-sans text-lg text-muted dark:text-silver">
-              Log what you spent. It saves offline and syncs later.
+              {expense
+                ? "Update the details. It saves offline and syncs later."
+                : "Log what you spent. It saves offline and syncs later."}
             </Text>
           </View>
 
@@ -127,7 +155,7 @@ export function AddExpenseForm() {
               <TextInput
                 autoFocus
                 accessibilityLabel={`Amount in ${currency}`}
-                className="flex-1 py-0 font-sans-bold text-4xl text-graphite placeholder:text-placeholder dark:text-on-graphite"
+                className="flex-1 py-0 font-sans-bold text-4xl text-graphite dark:text-on-graphite"
                 inputMode="decimal"
                 keyboardType="decimal-pad"
                 maxLength={12}
@@ -217,7 +245,7 @@ export function AddExpenseForm() {
               </Text>
             </View>
             <TextInput
-              className={`min-h-[112px] rounded-2xl border bg-surface px-4 py-3 font-sans text-lg text-graphite placeholder:text-placeholder dark:bg-graphite-surface dark:text-on-graphite ${
+              className={`min-h-[112px] rounded-2xl border bg-surface px-4 py-3 font-sans text-lg text-graphite dark:bg-graphite-surface dark:text-on-graphite ${
                 noteFocused
                   ? "border-mint"
                   : "border-edge dark:border-graphite-border"
@@ -252,9 +280,23 @@ export function AddExpenseForm() {
             <BrandButton
               disabled={!canSave}
               fullWidth
-              label={saving ? "Saving…" : "Save expense"}
+              label={
+                saving ? "Saving…" : expense ? "Save changes" : "Save expense"
+              }
               onPress={handleSave}
             />
+            {canVoid ? (
+              <BrandButton
+                disabled={saving || voiding}
+                fullWidth
+                label="Void expense"
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setShowVoid(true);
+                }}
+                variant="destructive"
+              />
+            ) : null}
             <Text className="text-center font-sans text-sm text-muted dark:text-silver">
               Saves on this device and syncs when you&apos;re online.
             </Text>
@@ -262,29 +304,7 @@ export function AddExpenseForm() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {Platform.OS === "ios" && showDatePicker ? (
-        <Sheet visible onClose={() => setShowDatePicker(false)}>
-          <Text className="font-sans-semibold text-2xl text-graphite dark:text-on-graphite">
-            Choose a date
-          </Text>
-          <DateTimePicker
-            accentColor={colors.mint}
-            display="inline"
-            maximumDate={new Date()}
-            mode="date"
-            onValueChange={(_event, selected) => setDate(selected)}
-            themeVariant={scheme}
-            value={date}
-          />
-          <BrandButton
-            fullWidth
-            label="Done"
-            onPress={() => setShowDatePicker(false)}
-          />
-        </Sheet>
-      ) : null}
-
-      {Platform.OS === "android" && showDatePicker ? (
+      {showDatePicker ? (
         <DateTimePicker
           accentColor={colors.mint}
           maximumDate={new Date()}
@@ -300,6 +320,59 @@ export function AddExpenseForm() {
           value={date}
         />
       ) : null}
+
+      <Sheet
+        visible={showVoid}
+        onClose={() => {
+          if (voiding) return;
+          setShowVoid(false);
+          setVoidReason("");
+        }}
+      >
+        <Text className="font-sans-semibold text-2xl text-graphite dark:text-on-graphite">
+          Void expense?
+        </Text>
+        <Text className="font-sans text-base text-muted dark:text-silver">
+          This can&apos;t be undone.
+        </Text>
+
+        <View className="gap-2">
+          <View className="flex-row items-center justify-between">
+            <Text className="font-sans-medium text-sm text-muted dark:text-silver">
+              Reason
+            </Text>
+            <Text className="font-sans text-xs text-muted dark:text-silver">
+              Optional
+            </Text>
+          </View>
+          <TextField
+            accessibilityLabel="Void reason (optional)"
+            onChangeText={setVoidReason}
+            placeholder="Why are you voiding this?"
+            value={voidReason}
+          />
+        </View>
+
+        <View className="gap-2">
+          <BrandButton
+            disabled={voiding}
+            fullWidth
+            label={voiding ? "Voiding…" : "Void expense"}
+            onPress={handleVoid}
+            variant="destructive"
+          />
+          <BrandButton
+            disabled={voiding}
+            fullWidth
+            label="Cancel"
+            onPress={() => {
+              setShowVoid(false);
+              setVoidReason("");
+            }}
+            variant="text"
+          />
+        </View>
+      </Sheet>
     </SafeAreaView>
   );
 }
