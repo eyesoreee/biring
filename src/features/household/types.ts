@@ -20,3 +20,23 @@ export type HouseholdListItem = {
   members: number;
   month_total: number | null;
 };
+
+export type MonthSummary = {
+  count: number;
+  total: number;
+};
+
+export type CategoryTotal = {
+  category: string;
+  total: number;
+};
+
+export type RecentExpense = {
+  id: string;
+  title: string;
+  amount: string;
+  category: string;
+  spent_at: string;
+  spender_id: string;
+  spender_nickname: string | null;
+};
