@@ -21,6 +21,26 @@ export type HouseholdListItem = {
   month_total: number | null;
 };
 
+export type MonthSummary = {
+  count: number;
+  total: number;
+};
+
+export type CategoryTotal = {
+  category: string;
+  total: number;
+};
+
+export type RecentExpense = {
+  id: string;
+  title: string;
+  amount: string;
+  category: string;
+  spent_at: string;
+  spender_id: string;
+  spender_nickname: string | null;
+};
+
 export type ExpenseListItem = {
   id: string;
   title: string;
@@ -36,6 +56,8 @@ export type EditableExpense = {
   title: string;
   amount: string;
   category: string;
-  note: string | null;
   spent_at: string;
+  spender_id: string;
+  spender_nickname: string | null;
+  note: string | null;
 };

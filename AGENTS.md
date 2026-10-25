@@ -1,41 +1,37 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+# Minimal Implementation and Incremental Learning
 
-## Expo has changed — do not trust your training data
+My priority is to learn by building software one small, working feature at a time.
 
-Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
+## Core rule
 
-1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+Implement the **smallest amount of code necessary to satisfy my current request**. Do not build a more complete, extensible, or future-proof system than I asked for.
 
-## Commands
+Follow YAGNI: You Aren't Gonna Need It.
 
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+## How to write code
 
-```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
-```
+1. Implement only what the current feature needs to work.
+2. Do not add code for hypothetical future requirements, possible future scale, or imagined scenarios unless the current requirements actually need it.
+3. Do not introduce unnecessary abstractions, helper layers, interfaces, factories, design patterns, configuration options, dependencies, or generalized frameworks.
+4. Prefer the simplest approach using the existing codebase, built-in language features, or native platform functionality.
+5. Do not refactor unrelated code or add unrelated features.
+6. Avoid handling hypothetical edge cases that cannot reasonably occur under the current requirements.
+7. Keep the implementation readable and easy for a beginner to understand. Prefer straightforward code over clever tricks or unnecessarily compressed one-liners.
 
-Run lint and typecheck before declaring any task done.
+## Work incrementally
 
-## Navigation & Routing
+1. Build the smallest working version first.
+2. Do not add optional enhancements just because they might be useful later.
+3. Once the feature works, stop. Explain what was implemented and what was deliberately left out.
+4. If a useful future improvement comes to mind, mention it briefly as a possible next step. Do not implement it until I ask.
+5. Explain the important parts of the implementation so I can learn how they work.
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+## Keep only what is necessary
 
-## Building with EAS
+Do not remove correctness checks, security protections, accessibility requirements, or error handling needed to prevent real failures or data loss. Keep tests proportionate to the complexity of the feature.
 
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
+Before adding anything beyond the basic solution, ask: "Is this necessary for the feature I requested right now?"
 
-## Rules
+If the answer is no, leave it out.
 
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+**My goal is not to build the perfect system immediately. My goal is to build a simple working system, understand it, and improve it step by step when I need to.**

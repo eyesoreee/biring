@@ -53,3 +53,10 @@ export function monthBounds(date: Date) {
     ),
   };
 }
+
+export function parseSpentAt(value: string) {
+  const iso = value.includes("T") ? value : value.replace(" ", "T");
+  if (/(?:Z|[+-]\d{2}:?\d{2})$/i.test(iso)) return new Date(iso);
+  if (/[+-]\d{2}$/.test(iso)) return new Date(`${iso}:00`);
+  return new Date(`${iso}Z`);
+}
