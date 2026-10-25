@@ -13,9 +13,9 @@ import {
 } from "@/features/household/format";
 import { useHousehold } from "@/features/household/HouseholdProvider";
 import {
+  CATEGORY_TOTALS_SQL,
   MONTH_SUMMARY_SQL,
   RECENT_EXPENSES_SQL,
-  TOP_CATEGORIES_SQL,
 } from "@/features/household/sql";
 import type {
   CategoryTotal,
@@ -80,7 +80,7 @@ export default function HomeScreen() {
     previousBounds.monthStart,
     previousBounds.monthEnd,
   ]);
-  const { data: categories } = useQuery<CategoryTotal>(TOP_CATEGORIES_SQL, [
+  const { data: categories } = useQuery<CategoryTotal>(CATEGORY_TOTALS_SQL, [
     id,
     monthStart,
     monthEnd,
@@ -197,7 +197,7 @@ export default function HomeScreen() {
 
           {categories.length > 0 ? (
             <View className="flex-row gap-5">
-              {categories.map((category) => {
+              {categories.slice(0, 2).map((category) => {
                 const share =
                   total > 0 ? Math.min(100, (category.total / total) * 100) : 0;
 

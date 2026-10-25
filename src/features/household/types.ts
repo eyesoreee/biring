@@ -31,6 +31,12 @@ export type CategoryTotal = {
   total: number;
 };
 
+export type MemberTotal = {
+  spender_id: string;
+  spender_nickname: string | null;
+  total: number;
+};
+
 export type RecentExpense = {
   id: string;
   title: string;
