@@ -32,6 +32,15 @@ export type CategoryTotal = {
 };
 
 export type RecentExpense = {
+  id: string;
+  title: string;
+  amount: string;
+  category: string;
+  spent_at: string;
+  spender_id: string;
+  spender_nickname: string | null;
+};
+
 export type ExpenseListItem = {
   id: string;
   title: string;
@@ -51,5 +60,4 @@ export type EditableExpense = {
   spender_id: string;
   spender_nickname: string | null;
   note: string | null;
-  spent_at: string;
 };
