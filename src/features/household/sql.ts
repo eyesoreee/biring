@@ -24,14 +24,24 @@ export const MONTH_SUMMARY_SQL = `
   WHERE household_id = ? AND voided_at IS NULL
     AND datetime(spent_at) >= datetime(?) AND datetime(spent_at) < datetime(?)`;
 
-export const TOP_CATEGORIES_SQL = `
+export const CATEGORY_TOTALS_SQL = `
   SELECT category, ROUND(SUM(CAST(amount AS REAL)), 2) AS total
   FROM expense
   WHERE household_id = ? AND voided_at IS NULL
     AND datetime(spent_at) >= datetime(?) AND datetime(spent_at) < datetime(?)
   GROUP BY category
-  ORDER BY total DESC
-  LIMIT 2`;
+  ORDER BY total DESC`;
+
+export const MEMBER_TOTALS_SQL = `
+  SELECT e.spender_id, m.nickname AS spender_nickname,
+         ROUND(SUM(CAST(e.amount AS REAL)), 2) AS total
+  FROM expense e
+  LEFT JOIN household_member m
+    ON m.household_id = e.household_id AND m.user_id = e.spender_id
+  WHERE e.household_id = ? AND e.voided_at IS NULL
+    AND datetime(e.spent_at) >= datetime(?) AND datetime(e.spent_at) < datetime(?)
+  GROUP BY e.spender_id
+  ORDER BY total DESC`;
 
 export const RECENT_EXPENSES_SQL = `
   SELECT e.id, e.title, e.amount, e.category, e.spent_at, e.spender_id,
