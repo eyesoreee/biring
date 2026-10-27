@@ -34,6 +34,7 @@ import {
 import { useHousehold } from "@/features/household/HouseholdProvider";
 import type { EditableExpense } from "@/features/household/types";
 import { validate, type FieldErrors } from "@/lib/forms";
+import { useAsyncLock } from "@/lib/useAsyncLock";
 import { useTheme } from "@/theme/ThemeProvider";
 
 export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
@@ -56,6 +57,7 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
   const [showVoid, setShowVoid] = useState(false);
   const [voidReason, setVoidReason] = useState("");
   const [voiding, setVoiding] = useState(false);
+  const runLocked = useAsyncLock();
 
   const currency = household?.currency_code ?? "PHP";
   const canVoid = !!expense && me?.role === "owner";
@@ -75,8 +77,8 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
     else router.replace({ pathname: "/household/[id]", params: { id } });
   };
 
-  const handleSave = async () => {
-    if (saving || !me) return;
+  const saveExpense = async () => {
+    if (!me) return;
 
     Keyboard.dismiss();
     setError(null);
@@ -108,8 +110,8 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
     }
   };
 
-  const handleVoid = async () => {
-    if (!expense || !canVoid || voiding) return;
+  const voidExpenseAction = async () => {
+    if (!expense || !canVoid) return;
 
     Keyboard.dismiss();
     setVoiding(true);
@@ -126,6 +128,9 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
       setVoiding(false);
     }
   };
+
+  const handleSave = () => runLocked(saveExpense);
+  const handleVoid = () => runLocked(voidExpenseAction);
 
   return (
     <SafeAreaView

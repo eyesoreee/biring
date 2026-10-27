@@ -17,6 +17,7 @@ import {
 import { AppLogo } from "@/components/ui/AppLogo";
 import { BrandButton } from "@/components/ui/BrandButton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { SyncNotice } from "@/components/ui/SyncNotice";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { HouseholdRow } from "@/features/household/components/HouseholdRow";
 import { formatMoney, monthBounds, MONTHS } from "@/features/household/format";
@@ -89,6 +90,7 @@ export default function HouseholdsScreen() {
           contentContainerClassName="grow px-6 pt-2"
           showsVerticalScrollIndicator={false}
         >
+          <SyncNotice />
           {households.length === 0 ? (
             hasSynced ? (
               <View className="flex-1 justify-center">

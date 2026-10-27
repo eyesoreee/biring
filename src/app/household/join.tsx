@@ -2,7 +2,7 @@ import { useStatus } from "@powersync/react";
 import { parse } from "expo-linking";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
@@ -12,7 +12,9 @@ import { TextField } from "@/components/ui/TextField";
 import { QrScanner } from "@/features/household/components/QrScanner";
 import { useSession } from "@/lib/auth";
 import { validate, type FieldErrors } from "@/lib/forms";
+import { useAsyncLock } from "@/lib/useAsyncLock";
 import { rpc } from "@/powersync/rpc";
+import { waitForMembership } from "@/powersync/system";
 
 const joinSchema = z.object({
   nickname: z
@@ -44,6 +46,7 @@ export default function JoinHouseholdScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const offline = !connected;
+  const runLocked = useAsyncLock();
 
   const clearError = (field: string) => {
     setErrors((current) => {
@@ -61,28 +64,42 @@ export default function JoinHouseholdScreen() {
     setScanning(false);
   };
 
-  const handleJoin = async () => {
-    setError(null);
+  const handleJoin = () =>
+    runLocked(async () => {
+      setError(null);
 
-    const result = validate(joinSchema, { nickname, code });
-    if (!result.ok) {
-      setErrors(result.errors);
-      return;
-    }
+      const result = validate(joinSchema, { nickname, code });
+      if (!result.ok) {
+        setErrors(result.errors);
+        return;
+      }
 
-    setErrors({});
-    setSubmitting(true);
-    try {
-      const id = await rpc<string>("join_household", {
-        p_code: result.data.code,
-        p_nickname: result.data.nickname,
-      });
-      router.replace({ pathname: "/household/[id]", params: { id } });
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Something went wrong");
-      setSubmitting(false);
-    }
-  };
+      setErrors({});
+      setSubmitting(true);
+      try {
+        const id = await rpc<string>("join_household", {
+          p_code: result.data.code,
+          p_nickname: result.data.nickname,
+        });
+
+        const synced = await waitForMembership(id, session?.user.id ?? "");
+        if (!synced) {
+          Alert.alert(
+            "Still syncing",
+            "You've joined the household. It will appear on your home screen once this device finishes syncing.",
+          );
+          router.replace("/");
+          return;
+        }
+
+        router.replace({ pathname: "/household/[id]", params: { id } });
+      } catch (cause) {
+        setError(
+          cause instanceof Error ? cause.message : "Something went wrong",
+        );
+        setSubmitting(false);
+      }
+    });
 
   return (
     <SafeAreaView

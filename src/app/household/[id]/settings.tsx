@@ -7,6 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BrandButton } from "@/components/ui/BrandButton";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { SyncNotice } from "@/components/ui/SyncNotice";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { ArchiveSheet } from "@/features/household/components/ArchiveSheet";
 import { InviteSheet } from "@/features/household/components/InviteSheet";
@@ -16,6 +17,7 @@ import { MemberSheet } from "@/features/household/components/MemberSheet";
 import { NicknameSheet } from "@/features/household/components/NicknameSheet";
 import { useHousehold } from "@/features/household/HouseholdProvider";
 import type { Member, Role } from "@/features/household/types";
+import { useAsyncLock } from "@/lib/useAsyncLock";
 import { rpc } from "@/powersync/rpc";
 import { logout, powersync } from "@/powersync/system";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -44,6 +46,7 @@ export default function SettingsScreen() {
   const [busy, setBusy] = useState(false);
 
   const canLeave = !!me && (me.role === "member" || members.length > 1);
+  const runLocked = useAsyncLock();
 
   const openNickname = () => {
     if (!me) return;
@@ -51,77 +54,112 @@ export default function SettingsScreen() {
     setEditing(true);
   };
 
-  const saveNickname = async () => {
-    const nickname = draft.trim();
-    if (!nickname || !me) return;
-    try {
-      await powersync.execute(
-        "UPDATE household_member SET nickname = ? WHERE id = ?",
-        [nickname, me.id],
-      );
-      setEditing(false);
-    } catch (cause) {
-      alertError("Can't save nickname", cause);
-    }
-  };
+  const saveNickname = () =>
+    runLocked(async () => {
+      const nickname = draft.trim();
+      if (!nickname || !me) return;
+      try {
+        await powersync.execute(
+          "UPDATE household_member SET nickname = ? WHERE id = ?",
+          [nickname, me.id],
+        );
+        setEditing(false);
+      } catch (cause) {
+        alertError("Can't save nickname", cause);
+      }
+    });
 
-  const signOut = async () => {
-    setBusy(true);
-    try {
-      await logout();
-      router.replace("/auth");
-    } catch (cause) {
-      alertError("Can't log out", cause);
-    } finally {
-      setBusy(false);
-    }
-  };
+  const signOut = () =>
+    runLocked(async () => {
+      setBusy(true);
+      try {
+        await logout();
+        router.replace("/auth");
+      } catch (cause) {
+        alertError("Can't log out", cause);
+      } finally {
+        setBusy(false);
+      }
+    });
 
-  const archive = async () => {
-    setBusy(true);
-    try {
-      await rpc("archive_household", { p_household_id: id });
-      setConfirming(false);
-      router.navigate("/");
-    } catch (cause) {
-      setConfirming(false);
-      alertError("Can't archive household", cause);
-    } finally {
-      setBusy(false);
-    }
-  };
+  const archive = () =>
+    runLocked(async () => {
+      setBusy(true);
+      try {
+        await rpc("archive_household", { p_household_id: id });
+        setConfirming(false);
+        router.navigate("/");
+      } catch (cause) {
+        setConfirming(false);
+        alertError("Can't archive household", cause);
+      } finally {
+        setBusy(false);
+      }
+    });
 
-  const changeRole = async (role: Role) => {
+  const changeRole = (role: Role) =>
+    runLocked(async () => {
+      if (!managing) return;
+
+      setRoleBusy(true);
+      try {
+        await rpc("set_member_role", {
+          p_household_id: id,
+          p_user_id: managing.user_id,
+          p_role: role,
+        });
+        setManaging(null);
+      } catch (cause) {
+        alertError("Can't change role", cause);
+      } finally {
+        setRoleBusy(false);
+      }
+    });
+
+  const kickMember = () =>
+    runLocked(async () => {
+      if (!managing) return;
+
+      setRoleBusy(true);
+      try {
+        await rpc("kick_member", {
+          p_household_id: id,
+          p_user_id: managing.user_id,
+        });
+        setManaging(null);
+      } catch (cause) {
+        alertError("Can't remove member", cause);
+      } finally {
+        setRoleBusy(false);
+      }
+    });
+
+  const confirmKick = () => {
     if (!managing) return;
-
-    setRoleBusy(true);
-    try {
-      await rpc("set_member_role", {
-        p_household_id: id,
-        p_user_id: managing.user_id,
-        p_role: role,
-      });
-      setManaging(null);
-    } catch (cause) {
-      alertError("Can't change role", cause);
-    } finally {
-      setRoleBusy(false);
-    }
+    Alert.alert(
+      `Remove ${managing.nickname}?`,
+      "They will lose access to this household. Until you create a new invite code, they can rejoin with the current one.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Remove", style: "destructive", onPress: kickMember },
+      ],
+    );
   };
 
-  const leave = async () => {
-    setBusy(true);
-    try {
-      await rpc("leave_household", { p_household_id: id });
-      setLeaving(false);
-      router.navigate("/");
-    } catch (cause) {
-      setLeaving(false);
-      alertError("Can't leave household", cause);
-    } finally {
-      setBusy(false);
-    }
-  };
+  const leave = () =>
+    runLocked(async () => {
+      setBusy(true);
+      try {
+        await rpc("leave_household", { p_household_id: id });
+        setLeaving(false);
+        router.navigate("/");
+      } catch (cause) {
+        setLeaving(false);
+        alertError("Can't leave household", cause);
+      } finally {
+        setBusy(false);
+      }
+    });
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-canvas dark:bg-graphite">
@@ -131,6 +169,8 @@ export default function SettingsScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <PageHeader title="Settings" />
+
+        <SyncNotice />
 
         <View className="gap-3">
           <Text className="font-sans-semibold text-xl text-graphite dark:text-on-graphite">
@@ -259,6 +299,8 @@ export default function SettingsScreen() {
         visible={inviting}
         onClose={() => setInviting(false)}
         household={household}
+        householdId={id}
+        isOwner={me?.role === "owner"}
       />
 
       <ArchiveSheet
@@ -284,6 +326,7 @@ export default function SettingsScreen() {
           offline={offline}
           onClose={() => setManaging(null)}
           onChangeRole={changeRole}
+          onKick={confirmKick}
         />
       ) : null}
     </SafeAreaView>

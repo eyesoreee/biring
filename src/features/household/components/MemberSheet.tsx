@@ -11,12 +11,14 @@ export function MemberSheet({
   offline,
   onClose,
   onChangeRole,
+  onKick,
 }: {
   member: Member;
   busy: boolean;
   offline: boolean;
   onClose: () => void;
   onChangeRole: (role: Role) => void;
+  onKick: () => void;
 }) {
   const nextRole: Role = member.role === "owner" ? "member" : "owner";
   const isOwner = member.role === "owner";
@@ -44,16 +46,19 @@ export function MemberSheet({
         <BrandButton
           fullWidth
           variant={isOwner ? "outlined" : "filled"}
-          label={
-            busy
-              ? "Saving…"
-              : isOwner
-                ? "Make member"
-                : "Make owner"
-          }
+          label={busy ? "Saving…" : isOwner ? "Make member" : "Make owner"}
           disabled={busy || offline}
           onPress={() => onChangeRole(nextRole)}
         />
+        {!isOwner ? (
+          <BrandButton
+            fullWidth
+            variant="destructive"
+            label="Remove from household"
+            disabled={busy || offline}
+            onPress={onKick}
+          />
+        ) : null}
         <BrandButton
           fullWidth
           variant="text"

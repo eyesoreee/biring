@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useStatus } from "@powersync/react";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
@@ -12,7 +12,9 @@ import { StepProgress } from "@/components/ui/StepProgress";
 import { TextField } from "@/components/ui/TextField";
 import { useSession } from "@/lib/auth";
 import { validate, type FieldErrors } from "@/lib/forms";
+import { useAsyncLock } from "@/lib/useAsyncLock";
 import { rpc } from "@/powersync/rpc";
+import { waitForMembership } from "@/powersync/system";
 import { useTheme } from "@/theme/ThemeProvider";
 
 const CURRENCIES = ["PHP", "USD", "EUR", "GBP", "JPY"];
@@ -51,6 +53,7 @@ export default function CreateHouseholdScreen() {
     Boolean,
   ).length;
   const offline = !connected;
+  const runLocked = useAsyncLock();
 
   const clearError = (field: string) => {
     setErrors((current) => {
@@ -61,29 +64,43 @@ export default function CreateHouseholdScreen() {
     });
   };
 
-  const handleCreate = async () => {
-    setError(null);
+  const handleCreate = () =>
+    runLocked(async () => {
+      setError(null);
 
-    const result = validate(householdSchema, { name, nickname, currency });
-    if (!result.ok) {
-      setErrors(result.errors);
-      return;
-    }
+      const result = validate(householdSchema, { name, nickname, currency });
+      if (!result.ok) {
+        setErrors(result.errors);
+        return;
+      }
 
-    setErrors({});
-    setSubmitting(true);
-    try {
-      const id = await rpc<string>("create_household", {
-        p_name: result.data.name,
-        p_nickname: result.data.nickname,
-        p_currency: result.data.currency,
-      });
-      router.replace({ pathname: "/household/[id]", params: { id } });
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Something went wrong");
-      setSubmitting(false);
-    }
-  };
+      setErrors({});
+      setSubmitting(true);
+      try {
+        const id = await rpc<string>("create_household", {
+          p_name: result.data.name,
+          p_nickname: result.data.nickname,
+          p_currency: result.data.currency,
+        });
+
+        const synced = await waitForMembership(id, session?.user.id ?? "");
+        if (!synced) {
+          Alert.alert(
+            "Still syncing",
+            "Your household was created. It will appear on your home screen once this device finishes syncing.",
+          );
+          router.replace("/");
+          return;
+        }
+
+        router.replace({ pathname: "/household/[id]", params: { id } });
+      } catch (cause) {
+        setError(
+          cause instanceof Error ? cause.message : "Something went wrong",
+        );
+        setSubmitting(false);
+      }
+    });
 
   return (
     <SafeAreaView

@@ -11,6 +11,7 @@ import { TextField } from "@/components/ui/TextField";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { friendlyAuthError, validate, type FieldErrors } from "@/lib/forms";
 import { supabase } from "@/lib/supabase";
+import { useAsyncLock } from "@/lib/useAsyncLock";
 
 type AuthMode = "signin" | "signup";
 
@@ -52,6 +53,7 @@ export default function AuthScreen() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const copy = COPY[mode];
+  const runLocked = useAsyncLock();
 
   const clearError = (field: string) => {
     setErrors((current) => {
@@ -77,41 +79,42 @@ export default function AuthScreen() {
     setMode((current) => (current === "signin" ? "signup" : "signin"));
   }, []);
 
-  const handleSubmit = async () => {
-    setError(null);
-    setNotice(null);
+  const handleSubmit = () =>
+    runLocked(async () => {
+      setError(null);
+      setNotice(null);
 
-    const result = validate(authSchema(mode), {
-      email: email.trim(),
-      password,
-    });
-    if (!result.ok) {
-      setErrors(result.errors);
-      return;
-    }
-    setErrors({});
-    setLoading(true);
-
-    try {
-      const { data, error } =
-        mode === "signin"
-          ? await supabase.auth.signInWithPassword(result.data)
-          : await supabase.auth.signUp(result.data);
-      if (error) throw error;
-      if (!data.session) {
-        setMode("signin");
-        setNotice("Account created. Confirm your email, then sign in.");
+      const result = validate(authSchema(mode), {
+        email: email.trim(),
+        password,
+      });
+      if (!result.ok) {
+        setErrors(result.errors);
+        return;
       }
-    } catch (cause) {
-      setError(
-        friendlyAuthError(
-          cause instanceof Error ? cause.message : "Something went wrong",
-        ),
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+      setErrors({});
+      setLoading(true);
+
+      try {
+        const { data, error } =
+          mode === "signin"
+            ? await supabase.auth.signInWithPassword(result.data)
+            : await supabase.auth.signUp(result.data);
+        if (error) throw error;
+        if (!data.session) {
+          setMode("signin");
+          setNotice("Account created. Confirm your email, then sign in.");
+        }
+      } catch (cause) {
+        setError(
+          friendlyAuthError(
+            cause instanceof Error ? cause.message : "Something went wrong",
+          ),
+        );
+      } finally {
+        setLoading(false);
+      }
+    });
 
   return (
     <SafeAreaView
