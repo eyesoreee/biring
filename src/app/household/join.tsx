@@ -4,8 +4,8 @@ import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { BackButton } from "@/components/ui/BackButton";
 import { BrandButton } from "@/components/ui/BrandButton";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { TextField } from "@/components/ui/TextField";
 import { useSession } from "@/lib/auth";
 import { rpc } from "@/powersync/rpc";
@@ -51,19 +51,11 @@ export default function JoinHouseholdScreen() {
         contentContainerClassName="grow gap-6 px-6 pb-4 pt-2"
         keyboardShouldPersistTaps="handled"
       >
-        <View className="flex-row">
-          <BackButton onPress={() => router.back()} />
-        </View>
-
-        <View className="gap-2">
-          <Text className="font-sans-bold text-4xl text-graphite dark:text-on-graphite">
-            Join your family.
-          </Text>
-          <Text className="font-sans text-lg text-muted dark:text-silver">
-            Ask the household owner for their invite code — they&apos;ll find it
-            in Settings.
-          </Text>
-        </View>
+        <PageHeader
+          back={() => router.back()}
+          title="Join your family."
+          subtitle="Ask the household owner for their invite code — they'll find it in Settings."
+        />
 
         <View className="gap-2">
           <Text className="font-sans-medium text-sm text-muted dark:text-silver">
@@ -72,6 +64,7 @@ export default function JoinHouseholdScreen() {
           <TextField
             value={nickname}
             onChangeText={setNickname}
+            accessibilityLabel="Nickname"
             placeholder="How they'll see you"
             autoCapitalize="words"
             autoCorrect={false}
@@ -87,6 +80,7 @@ export default function JoinHouseholdScreen() {
           <TextField
             value={code}
             onChangeText={setCode}
+            accessibilityLabel="Invite code"
             placeholder="Paste the invite code"
             autoCapitalize="none"
             autoCorrect={false}
@@ -99,7 +93,7 @@ export default function JoinHouseholdScreen() {
         <View className="flex-1" />
 
         {error ? (
-          <Text className="text-center font-sans text-lg text-destructive">
+          <Text className="text-center font-sans text-lg text-destructive-ink dark:text-destructive">
             {error}
           </Text>
         ) : null}

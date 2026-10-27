@@ -1,6 +1,6 @@
-import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppLogo } from "@/components/ui/AppLogo";
@@ -89,57 +89,61 @@ export default function AuthScreen() {
           <ThemeToggle />
         </View>
 
-        <View className="mt-4 items-center gap-5">
-          <AppLogo size={64} showWordmark={false} />
-          <Text className="text-center font-sans-bold text-4xl leading-6 text-graphite dark:text-on-graphite">
-            {copy.title}
-          </Text>
-          <Text className="text-center font-sans text-lg leading-6 text-muted dark:text-silver">
-            {copy.subtitle}
-          </Text>
-        </View>
+        <View className="flex-1 justify-center gap-5">
+          <View className="items-center gap-5">
+            <AppLogo size={64} showWordmark={false} />
+            <Text className="text-center font-sans-bold text-4xl text-graphite dark:text-on-graphite">
+              {copy.title}
+            </Text>
+            <Text className="text-center font-sans text-lg text-muted dark:text-silver">
+              {copy.subtitle}
+            </Text>
+          </View>
 
-        <View className="mt-2 gap-3">
-          <TextField
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Email"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="email"
-            returnKeyType="next"
-          />
-          <TextField
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Password"
-            secureTextEntry
-            autoCapitalize="none"
-            autoComplete={mode === "signin" ? "password" : "new-password"}
-            returnKeyType="done"
-            onSubmitEditing={handleSubmit}
-          />
-        </View>
+          <View className="gap-3">
+            <TextField
+              value={email}
+              onChangeText={setEmail}
+              accessibilityLabel="Email"
+              placeholder="Email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              returnKeyType="next"
+            />
+            <TextField
+              value={password}
+              onChangeText={setPassword}
+              accessibilityLabel="Password"
+              placeholder="Password"
+              secureTextEntry
+              autoCapitalize="none"
+              autoComplete={mode === "signin" ? "password" : "new-password"}
+              returnKeyType="done"
+              onSubmitEditing={handleSubmit}
+            />
+          </View>
 
-        {error ? (
-          <Text className="text-center font-sans text-lg text-destructive">
-            {error}
-          </Text>
-        ) : null}
+          {error ? (
+            <Text className="text-center font-sans text-lg text-destructive-ink dark:text-destructive">
+              {error}
+            </Text>
+          ) : null}
 
-        <View className="items-center gap-2">
-          <BrandButton
-            fullWidth
-            label={loading ? "One moment…" : copy.cta}
-            disabled={loading}
-            onPress={handleSubmit}
-          />
-          <BrandButton
-            variant="text"
-            label={copy.toggle}
-            onPress={toggleMode}
-          />
+          <View className="items-center gap-2">
+            <BrandButton
+              fullWidth
+              label={loading ? "One moment…" : copy.cta}
+              disabled={loading}
+              onPress={handleSubmit}
+            />
+            <BrandButton
+              variant="text"
+              label={copy.toggle}
+              onPress={toggleMode}
+            />
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

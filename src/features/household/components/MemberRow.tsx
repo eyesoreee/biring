@@ -19,7 +19,7 @@ export function MemberRow({
   return (
     <View className="flex-row items-center gap-3 border-b border-edge px-4 py-3 dark:border-graphite-border">
       <View className="h-11 w-11 items-center justify-center rounded-full bg-selected dark:bg-selected-dark">
-        <Text className="font-sans-semibold text-base text-mint">
+        <Text className="font-sans-semibold text-base text-mint-ink dark:text-mint">
           {member.nickname.charAt(0).toUpperCase()}
         </Text>
       </View>

@@ -70,11 +70,11 @@ export default function CreateHouseholdScreen() {
         <StepProgress completed={completed} total={3} />
 
         <View className="gap-2">
-          <Text className="font-sans-bold text-4xl text-graphite dark:text-on-graphite">
+          <Text className="font-sans-bold text-3xl text-graphite dark:text-on-graphite">
             Make it yours.
           </Text>
           <Text className="font-sans text-lg text-muted dark:text-silver">
-            Give it a name and a currency — you can change these later.
+            Give it a name and a currency. You can&apos;t change them later.
           </Text>
         </View>
 
@@ -102,6 +102,7 @@ export default function CreateHouseholdScreen() {
           <TextField
             value={name}
             onChangeText={setName}
+            accessibilityLabel="Household name"
             placeholder="Home"
             autoCapitalize="words"
             autoCorrect={false}
@@ -117,6 +118,7 @@ export default function CreateHouseholdScreen() {
           <TextField
             value={nickname}
             onChangeText={setNickname}
+            accessibilityLabel="Your nickname"
             placeholder="How they'll see you"
             autoCapitalize="words"
             autoCorrect={false}
@@ -137,17 +139,20 @@ export default function CreateHouseholdScreen() {
                 <Pressable
                   key={code}
                   onPress={() => setCurrency(code)}
+                  hitSlop={{ top: 5, bottom: 5 }}
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
                   className={`rounded-full border px-4 py-2 ${
                     selected
-                      ? "border-mint bg-selected dark:bg-selected-dark"
+                      ? "border-mint-ink bg-selected dark:border-mint dark:bg-selected-dark"
                       : "border-edge bg-surface dark:border-graphite-border dark:bg-graphite-surface"
                   }`}
                 >
                   <Text
                     className={`font-sans-medium text-base ${
-                      selected ? "text-mint" : "text-muted dark:text-silver"
+                      selected
+                        ? "text-mint-ink dark:text-mint"
+                        : "text-muted dark:text-silver"
                     }`}
                   >
                     {code}
@@ -161,7 +166,7 @@ export default function CreateHouseholdScreen() {
         <View className="flex-1" />
 
         {error ? (
-          <Text className="text-center font-sans text-lg text-destructive">
+          <Text className="text-center font-sans text-lg text-destructive-ink dark:text-destructive">
             {error}
           </Text>
         ) : null}

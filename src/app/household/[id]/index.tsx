@@ -2,9 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useStatus } from "@powersync/react";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { ExpenseRow } from "@/features/household/components/ExpenseRow";
+import { MonthSwitcher } from "@/features/household/components/MonthSwitcher";
 import {
   formatMoney,
   monthBounds,
@@ -60,12 +64,6 @@ export default function HomeScreen() {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
 
-  const now = new Date();
-  const isCurrentMonth =
-    month.getFullYear() === now.getFullYear() &&
-    month.getMonth() === now.getMonth();
-  const monthLabel = `${MONTHS[month.getMonth()].toUpperCase()} ${month.getFullYear()}`;
-
   const { monthStart, monthEnd } = monthBounds(month);
   const previousMonth = new Date(month.getFullYear(), month.getMonth() - 1, 1);
   const previousBounds = monthBounds(previousMonth);
@@ -97,6 +95,16 @@ export default function HomeScreen() {
   const currency = household?.currency_code ?? "PHP";
   const groups = groupByDay(recent);
 
+  const canEdit = (expense: RecentExpense) =>
+    me?.role === "owner" || expense.spender_id === me?.user_id;
+
+  const openEditor = (expense: RecentExpense) => {
+    router.push({
+      pathname: "/expense/new",
+      params: { id, expenseId: expense.id },
+    });
+  };
+
   const delta = total - previousTotal;
   const previousName = MONTHS[previousMonth.getMonth()];
   let comparison: string | null = null;
@@ -119,55 +127,17 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="gap-6 px-6 pb-6 pt-2">
-          <Pressable
+          <PageHeader
+            title={household?.name ?? "Household"}
+            tone="dark"
+            trailing={
+              <Ionicons name="chevron-down" size={22} color={palette.silver} />
+            }
+            accessibilityLabel="Switch household"
             onPress={() => router.navigate("/")}
-            className="flex-row items-center gap-2.5 active:opacity-70"
-          >
-            <View className="h-9 w-9 items-center justify-center rounded-full bg-selected-dark">
-              <Ionicons name="home" size={18} color={palette.mint} />
-            </View>
-            <Text
-              numberOfLines={1}
-              className="shrink font-sans-semibold text-xl text-on-graphite"
-            >
-              {household?.name ?? "Household"}
-            </Text>
-            <Ionicons name="chevron-down" size={18} color={palette.silver} />
-          </Pressable>
+          />
 
-          <View className="flex-row items-center justify-between">
-            <Pressable
-              onPress={() =>
-                setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))
-              }
-              className="h-10 w-10 items-center justify-center active:opacity-60"
-            >
-              <Ionicons name="chevron-back" size={20} color={palette.silver} />
-            </Pressable>
-
-            <Text className="font-sans-semibold text-sm tracking-wider text-on-graphite">
-              {monthLabel}
-            </Text>
-
-            <Pressable
-              onPress={() => {
-                if (!isCurrentMonth)
-                  setMonth(
-                    new Date(month.getFullYear(), month.getMonth() + 1, 1),
-                  );
-              }}
-              disabled={isCurrentMonth}
-              className={`h-10 w-10 items-center justify-center ${
-                isCurrentMonth ? "opacity-30" : "active:opacity-60"
-              }`}
-            >
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={palette.silver}
-              />
-            </Pressable>
-          </View>
+          <MonthSwitcher month={month} onChange={setMonth} tone="dark" />
 
           <View className="items-center gap-2">
             <Text className="font-sans-medium text-sm text-silver">
@@ -175,6 +145,8 @@ export default function HomeScreen() {
             </Text>
             <Text
               numberOfLines={1}
+              adjustsFontSizeToFit
+              style={{ fontVariant: ["tabular-nums"] }}
               className="w-full text-center font-sans-bold text-4xl text-on-graphite"
             >
               {formatMoney(total, currency)}
@@ -212,6 +184,7 @@ export default function HomeScreen() {
                     <Text
                       numberOfLines={1}
                       adjustsFontSizeToFit
+                      style={{ fontVariant: ["tabular-nums"] }}
                       className="font-sans-semibold text-xl text-on-graphite"
                     >
                       {formatMoney(category.total, currency)}
@@ -236,66 +209,39 @@ export default function HomeScreen() {
 
           {groups.length > 0 ? (
             <View className="mt-4 gap-5">
-              {groups.map((group) => (
+              {groups.map((group, groupIndex) => (
                 <View key={group.key} className="gap-1">
                   <Text className="font-sans-medium text-sm text-muted dark:text-silver">
                     {group.label}
                   </Text>
 
-                  {group.expenses.map((expense) => {
-                    const isMe = expense.spender_id === me?.user_id;
-                    const spender = expense.spender_nickname
-                      ? `${expense.spender_nickname}${isMe ? " (you)" : ""}`
-                      : null;
-                    const meta = [expense.category, spender]
-                      .filter(Boolean)
-                      .join(" · ");
+                  {group.expenses.map((expense, expenseIndex) => {
+                    const isLast =
+                      groupIndex === groups.length - 1 &&
+                      expenseIndex === group.expenses.length - 1;
 
                     return (
-                      <View
+                      <ExpenseRow
                         key={expense.id}
-                        className="flex-row items-center gap-3 border-b border-edge py-3 dark:border-graphite-border"
-                      >
-                        <View className="h-10 w-10 items-center justify-center rounded-full bg-selected dark:bg-selected-dark">
-                          <Ionicons
-                            name="receipt-outline"
-                            size={18}
-                            color={palette.mint}
-                          />
-                        </View>
-
-                        <View className="flex-1 gap-0.5">
-                          <Text
-                            numberOfLines={1}
-                            className="font-sans-semibold text-base text-graphite dark:text-on-graphite"
-                          >
-                            {expense.title}
-                          </Text>
-                          {meta ? (
-                            <Text
-                              numberOfLines={1}
-                              className="font-sans text-sm text-muted dark:text-silver"
-                            >
-                              {meta}
-                            </Text>
-                          ) : null}
-                        </View>
-
-                        <Text className="font-sans-semibold text-base text-graphite dark:text-on-graphite">
-                          {formatMoney(Number(expense.amount), currency)}
-                        </Text>
-                      </View>
+                        currency={currency}
+                        divider={!isLast}
+                        expense={expense}
+                        meId={me?.user_id}
+                        onPress={
+                          canEdit(expense) ? () => openEditor(expense) : undefined
+                        }
+                      />
                     );
                   })}
                 </View>
               ))}
             </View>
           ) : hasSynced ? (
-            <View className="grow items-center justify-center py-10">
-              <Text className="text-center font-sans text-base text-muted dark:text-silver">
-                No expenses in {MONTHS[month.getMonth()]}
-              </Text>
-            </View>
+            <EmptyState
+              icon="receipt-outline"
+              title={`No expenses in ${MONTHS[month.getMonth()]}`}
+              body="Tap the + button to add one."
+            />
           ) : null}
         </View>
       </ScrollView>

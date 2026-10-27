@@ -1,9 +1,11 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@powersync/react";
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { MonthSwitcher } from "@/features/household/components/MonthSwitcher";
 import { formatMoney, monthBounds, MONTHS } from "@/features/household/format";
 import { useHousehold } from "@/features/household/HouseholdProvider";
 import {
@@ -16,7 +18,6 @@ import type {
   MemberTotal,
   MonthSummary,
 } from "@/features/household/types";
-import { palette } from "@/theme/theme";
 
 export default function SummaryScreen() {
   const { id, household, me } = useHousehold();
@@ -25,12 +26,6 @@ export default function SummaryScreen() {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
-
-  const now = new Date();
-  const isCurrentMonth =
-    month.getFullYear() === now.getFullYear() &&
-    month.getMonth() === now.getMonth();
-  const monthLabel = `${MONTHS[month.getMonth()].toUpperCase()} ${month.getFullYear()}`;
 
   const { monthStart, monthEnd } = monthBounds(month);
   const previousMonth = new Date(month.getFullYear(), month.getMonth() - 1, 1);
@@ -79,13 +74,6 @@ export default function SummaryScreen() {
   const shareOfTotal = (value: number) =>
     total > 0 ? Math.min(100, (value / total) * 100) : 0;
 
-  const changeMonth = (offset: number) => {
-    setMonth(
-      (current) =>
-        new Date(current.getFullYear(), current.getMonth() + offset, 1),
-    );
-  };
-
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-graphite">
       <ScrollView
@@ -94,40 +82,15 @@ export default function SummaryScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="gap-6 px-6 pb-6 pt-2">
-          <Text className="font-sans-bold text-4xl text-on-graphite">
-            Summary
-          </Text>
+          <PageHeader title="Summary" tone="dark" />
 
-          <View className="flex-row items-center justify-between">
-            <Pressable
-              className="h-10 w-10 items-center justify-center active:opacity-60"
-              onPress={() => changeMonth(-1)}
-            >
-              <Ionicons name="chevron-back" size={20} color={palette.silver} />
-            </Pressable>
-
-            <Text className="font-sans-semibold text-sm tracking-wider text-on-graphite">
-              {monthLabel}
-            </Text>
-
-            <Pressable
-              className={`h-10 w-10 items-center justify-center ${
-                isCurrentMonth ? "opacity-30" : "active:opacity-60"
-              }`}
-              disabled={isCurrentMonth}
-              onPress={() => changeMonth(1)}
-            >
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={palette.silver}
-              />
-            </Pressable>
-          </View>
+          <MonthSwitcher month={month} onChange={setMonth} tone="dark" />
 
           <View className="items-center gap-2">
             <Text
               numberOfLines={1}
+              adjustsFontSizeToFit
+              style={{ fontVariant: ["tabular-nums"] }}
               className="w-full text-center font-sans-bold text-4xl text-on-graphite"
             >
               {formatMoney(total, currency)}
@@ -135,11 +98,6 @@ export default function SummaryScreen() {
             <Text className="text-center font-sans text-sm text-silver">
               {expenseCount} expense{expenseCount === 1 ? "" : "s"} this month
             </Text>
-            {previousTotal > 0 ? (
-              <Text className="text-center font-sans text-sm text-silver">
-                {previousName}: {formatMoney(previousTotal, currency)}
-              </Text>
-            ) : null}
             {comparison ? (
               <Text className="w-full text-center font-sans text-sm text-silver">
                 {comparison}
@@ -148,29 +106,15 @@ export default function SummaryScreen() {
           </View>
         </View>
 
-        <View className="grow rounded-t-3xl bg-surface px-6 pb-8 pt-5 dark:bg-graphite-surface">
-          <Text className="font-sans-medium text-sm text-muted dark:text-silver">
-            {`Recorded totals · ${MONTHS[month.getMonth()]} ${month.getFullYear()}`}
-          </Text>
-
+        <View className="grow rounded-t-3xl bg-surface px-6 pb-8 pt-6 dark:bg-graphite-surface">
           {total === 0 ? (
-            <View className="items-center justify-center gap-3 py-16">
-              <View className="h-14 w-14 items-center justify-center rounded-3xl bg-selected dark:bg-selected-dark">
-                <Ionicons
-                  name="pie-chart-outline"
-                  size={28}
-                  color={palette.mint}
-                />
-              </View>
-              <Text className="font-sans-semibold text-xl text-graphite dark:text-on-graphite">
-                No expenses in {MONTHS[month.getMonth()]}
-              </Text>
-              <Text className="text-center font-sans text-base text-muted dark:text-silver">
-                Tap the + button to add one.
-              </Text>
-            </View>
+            <EmptyState
+              icon="pie-chart-outline"
+              title={`No expenses in ${MONTHS[month.getMonth()]}`}
+              body="Tap the + button to add one."
+            />
           ) : (
-            <View className="gap-8 pt-6">
+            <View className="gap-8">
               <View className="gap-4">
                 <Text className="font-sans-semibold text-xl text-graphite dark:text-on-graphite">
                   By category
@@ -185,13 +129,16 @@ export default function SummaryScreen() {
                       >
                         {category.category}
                       </Text>
-                      <Text className="font-sans-semibold text-base text-graphite dark:text-on-graphite">
+                      <Text
+                        style={{ fontVariant: ["tabular-nums"] }}
+                        className="font-sans-semibold text-base text-graphite dark:text-on-graphite"
+                      >
                         {formatMoney(category.total, currency)}
                       </Text>
                     </View>
                     <View className="h-2 overflow-hidden rounded-full bg-edge dark:bg-graphite-border">
                       <View
-                        className="h-full rounded-full bg-mint"
+                        className="h-full rounded-full bg-mint-ink dark:bg-mint"
                         style={{ width: `${shareOfTotal(category.total)}%` }}
                       />
                     </View>
@@ -214,13 +161,16 @@ export default function SummaryScreen() {
                         {spender.spender_nickname ?? "Unknown"}
                         {spender.spender_id === me?.user_id ? " (you)" : ""}
                       </Text>
-                      <Text className="font-sans-semibold text-base text-graphite dark:text-on-graphite">
+                      <Text
+                        style={{ fontVariant: ["tabular-nums"] }}
+                        className="font-sans-semibold text-base text-graphite dark:text-on-graphite"
+                      >
                         {formatMoney(spender.total, currency)}
                       </Text>
                     </View>
                     <View className="h-2 overflow-hidden rounded-full bg-edge dark:bg-graphite-border">
                       <View
-                        className="h-full rounded-full bg-mint"
+                        className="h-full rounded-full bg-mint-ink dark:bg-mint"
                         style={{ width: `${shareOfTotal(spender.total)}%` }}
                       />
                     </View>

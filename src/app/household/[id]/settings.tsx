@@ -5,8 +5,8 @@ import { useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { BackButton } from "@/components/ui/BackButton";
 import { BrandButton } from "@/components/ui/BrandButton";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { ArchiveSheet } from "@/features/household/components/ArchiveSheet";
 import { InviteSheet } from "@/features/household/components/InviteSheet";
@@ -90,17 +90,10 @@ export default function SettingsScreen() {
         contentContainerClassName="gap-6 px-6 pb-10 pt-2"
         keyboardShouldPersistTaps="handled"
       >
-        <View className="gap-4">
-          <View className="flex-row">
-            <BackButton onPress={() => router.navigate("/")} />
-          </View>
-          <Text className="font-sans-bold text-4xl text-graphite dark:text-on-graphite">
-            Settings
-          </Text>
-        </View>
+        <PageHeader title="Settings" />
 
         <View className="gap-3">
-          <Text className="font-sans-medium text-sm text-muted dark:text-silver">
+          <Text className="font-sans-semibold text-xl text-graphite dark:text-on-graphite">
             Family members
           </Text>
           <View className="overflow-hidden rounded-2xl border border-edge bg-surface dark:border-graphite-border dark:bg-graphite-surface">
@@ -115,12 +108,13 @@ export default function SettingsScreen() {
 
             <Pressable
               onPress={() => setInviting(true)}
+              accessibilityRole="button"
               className="active:opacity-70 flex-row items-center gap-3 px-4 py-3"
             >
-              <View className="h-11 w-11 items-center justify-center rounded-full border border-dashed border-mint">
+              <View className="h-11 w-11 items-center justify-center rounded-full border border-dashed border-mint-ink dark:border-mint">
                 <Ionicons name="add" size={20} color={colors.mint} />
               </View>
-              <Text className="font-sans-semibold text-lg text-mint">
+              <Text className="font-sans-semibold text-lg text-mint-ink dark:text-mint">
                 Invite a family member
               </Text>
             </Pressable>
@@ -128,7 +122,7 @@ export default function SettingsScreen() {
         </View>
 
         <View className="gap-3">
-          <Text className="font-sans-medium text-sm text-muted dark:text-silver">
+          <Text className="font-sans-semibold text-xl text-graphite dark:text-on-graphite">
             Household
           </Text>
           <View className="overflow-hidden rounded-2xl border border-edge bg-surface dark:border-graphite-border dark:bg-graphite-surface">
@@ -155,7 +149,7 @@ export default function SettingsScreen() {
         </View>
 
         <View className="gap-3">
-          <Text className="font-sans-medium text-sm text-muted dark:text-silver">
+          <Text className="font-sans-semibold text-xl text-graphite dark:text-on-graphite">
             Preferences
           </Text>
           <View className="flex-row items-center justify-between rounded-2xl border border-edge bg-surface px-4 py-3 dark:border-graphite-border dark:bg-graphite-surface">
@@ -167,7 +161,7 @@ export default function SettingsScreen() {
         </View>
 
         <View className="gap-3">
-          <Text className="font-sans-medium text-sm text-muted dark:text-silver">
+          <Text className="font-sans-semibold text-xl text-graphite dark:text-on-graphite">
             Account
           </Text>
           {offline ? (

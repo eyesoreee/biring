@@ -9,6 +9,7 @@ export function BackButton({ onPress }: { onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
+      hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel="Go back"
       className="active:opacity-60 h-10 w-10 items-center justify-center rounded-full border border-edge bg-surface dark:border-graphite-border dark:bg-graphite-surface"

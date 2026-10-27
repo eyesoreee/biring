@@ -5,6 +5,7 @@ import Animated, {
   Easing,
   interpolateColor,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
@@ -13,16 +14,17 @@ import { useTheme } from "@/theme/ThemeProvider";
 
 export function ThemeToggle() {
   const { isDark, toggleDark } = useTheme();
+  const reduceMotion = useReducedMotion();
   const progress = useSharedValue(isDark ? 0 : 1);
 
   useEffect(() => {
     progress.set(
       withTiming(isDark ? 0 : 1, {
-        duration: 250,
+        duration: reduceMotion ? 0 : 250,
         easing: Easing.cubic,
       }),
     );
-  }, [isDark, progress]);
+  }, [isDark, progress, reduceMotion]);
 
   const track = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
@@ -38,7 +40,13 @@ export function ThemeToggle() {
   const moon = useAnimatedStyle(() => ({ opacity: 1 - progress.value }));
 
   return (
-    <Pressable onPress={toggleDark}>
+    <Pressable
+      onPress={toggleDark}
+      hitSlop={8}
+      accessibilityRole="switch"
+      accessibilityLabel="Dark mode"
+      accessibilityState={{ checked: isDark }}
+    >
       <Animated.View
         style={track}
         className="h-9 w-16 justify-center rounded-full px-2"

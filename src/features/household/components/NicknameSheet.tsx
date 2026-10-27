@@ -25,6 +25,7 @@ export function NicknameSheet({
       <TextField
         value={value}
         onChangeText={onChangeText}
+        accessibilityLabel="Nickname"
         placeholder="How they'll see you"
         autoCapitalize="words"
         autoCorrect={false}

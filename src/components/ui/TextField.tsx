@@ -27,18 +27,19 @@ export function TextField({
           setFocused(false);
           onBlur?.(event);
         }}
-        className={`h-14 rounded-2xl border bg-surface px-4 font-sans text-lg text-graphite placeholder:text-placeholder dark:bg-graphite-surface dark:text-on-graphite ${
-          focused ? "border-mint" : "border-edge dark:border-graphite-border"
+        className={`h-14 rounded-2xl border bg-surface px-4 font-sans text-lg text-graphite placeholder:text-placeholder dark:bg-graphite-surface dark:text-on-graphite dark:placeholder:text-placeholder-dark ${
+          focused
+            ? "border-mint-ink dark:border-mint"
+            : "border-edge dark:border-graphite-border"
         } ${secureTextEntry ? "pr-12" : ""}`}
       />
 
       {secureTextEntry ? (
         <Pressable
           onPress={() => setRevealed((current) => !current)}
-          hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={revealed ? "Hide password" : "Show password"}
-          className="active:opacity-60 absolute right-4"
+          className="active:opacity-60 absolute right-1 h-12 w-12 items-center justify-center"
         >
           <Ionicons
             name={revealed ? "eye-off-outline" : "eye-outline"}

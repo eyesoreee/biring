@@ -15,8 +15,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { BackButton } from "@/components/ui/BackButton";
 import { BrandButton } from "@/components/ui/BrandButton";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Sheet } from "@/components/ui/Sheet";
 import { TextField } from "@/components/ui/TextField";
 import {
@@ -123,20 +123,15 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
         >
-          <View className="flex-row">
-            <BackButton onPress={close} />
-          </View>
-
-          <View className="gap-2">
-            <Text className="font-sans-bold text-4xl text-graphite dark:text-on-graphite">
-              {expense ? "Edit expense" : "Add expense"}
-            </Text>
-            <Text className="font-sans text-lg text-muted dark:text-silver">
-              {expense
+          <PageHeader
+            back={close}
+            title={expense ? "Edit expense" : "Add expense"}
+            subtitle={
+              expense
                 ? "Update the details. It saves offline and syncs later."
-                : "Log what you spent. It saves offline and syncs later."}
-            </Text>
-          </View>
+                : "Log what you spent. It saves offline and syncs later."
+            }
+          />
 
           <View className="gap-2">
             <Text className="font-sans-medium text-xs uppercase tracking-widest text-muted dark:text-silver">
@@ -145,7 +140,7 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
             <View
               className={`flex-row items-center gap-3 rounded-2xl border bg-surface px-4 py-4 dark:bg-graphite-surface ${
                 amountFocused
-                  ? "border-mint"
+                  ? "border-mint-ink dark:border-mint"
                   : "border-edge dark:border-graphite-border"
               }`}
             >
@@ -156,6 +151,7 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
                 autoFocus
                 accessibilityLabel={`Amount in ${currency}`}
                 className="flex-1 py-0 font-sans-bold text-4xl text-graphite dark:text-on-graphite"
+                style={{ fontVariant: ["tabular-nums"] }}
                 inputMode="decimal"
                 keyboardType="decimal-pad"
                 maxLength={12}
@@ -171,7 +167,7 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
               </Text>
             </View>
             {showAmountError ? (
-              <Text className="font-sans text-sm text-destructive">
+              <Text className="font-sans text-sm text-destructive-ink dark:text-destructive">
                 Enter an amount greater than zero, with up to two decimals.
               </Text>
             ) : null}
@@ -182,6 +178,7 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
               Category
             </Text>
             <TextField
+              accessibilityLabel="Category"
               autoCapitalize="words"
               maxLength={40}
               onChangeText={setCategory}
@@ -226,6 +223,7 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
               Title
             </Text>
             <TextField
+              accessibilityLabel="Title"
               autoCapitalize="sentences"
               maxLength={80}
               onChangeText={setTitle}
@@ -245,9 +243,10 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
               </Text>
             </View>
             <TextInput
+              accessibilityLabel="Note, optional"
               className={`min-h-[112px] rounded-2xl border bg-surface px-4 py-3 font-sans text-lg text-graphite dark:bg-graphite-surface dark:text-on-graphite ${
                 noteFocused
-                  ? "border-mint"
+                  ? "border-mint-ink dark:border-mint"
                   : "border-edge dark:border-graphite-border"
               }`}
               maxLength={300}
@@ -265,12 +264,12 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
           <View className="flex-1" />
 
           {error ? (
-            <Text className="text-center font-sans text-base text-destructive">
+            <Text className="text-center font-sans text-base text-destructive-ink dark:text-destructive">
               {error}
             </Text>
           ) : null}
 
-          {missingRequired ? (
+          {missingRequired && !showAmountError ? (
             <Text className="text-center font-sans text-sm text-muted dark:text-silver">
               Add an amount, category, and title to save.
             </Text>
