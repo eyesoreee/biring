@@ -1,38 +1,81 @@
 import { useStatus } from "@powersync/react";
-import { useRouter } from "expo-router";
+import { parse } from "expo-linking";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { z } from "zod";
 
-import { BackButton } from "@/components/ui/BackButton";
 import { BrandButton } from "@/components/ui/BrandButton";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { TextField } from "@/components/ui/TextField";
+import { QrScanner } from "@/features/household/components/QrScanner";
 import { useSession } from "@/lib/auth";
+import { validate, type FieldErrors } from "@/lib/forms";
 import { rpc } from "@/powersync/rpc";
+
+const joinSchema = z.object({
+  nickname: z
+    .string()
+    .trim()
+    .min(1, "Add a nickname")
+    .max(24, "Keep the nickname under 24 characters"),
+  code: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[0-9a-f]{32}$/, "Enter the 32-character invite code"),
+});
 
 export default function JoinHouseholdScreen() {
   const router = useRouter();
+  const { code: inviteCode } = useLocalSearchParams<{ code?: string }>();
   const session = useSession();
   const { connected } = useStatus();
   const [nickname, setNickname] = useState(
     () => session?.user.email?.split("@")[0] ?? "",
   );
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(() =>
+    typeof inviteCode === "string" ? inviteCode : "",
+  );
+  const [scanning, setScanning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
 
-  const trimmedCode = code.trim();
-  const trimmedNickname = nickname.trim();
   const offline = !connected;
-  const canJoin = !!trimmedNickname && !!trimmedCode && !submitting && !offline;
+
+  const clearError = (field: string) => {
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const handleScan = (data: string) => {
+    const scanned = parse(data).queryParams?.code;
+    setCode(typeof scanned === "string" ? scanned : data.trim());
+    clearError("code");
+    setScanning(false);
+  };
 
   const handleJoin = async () => {
     setError(null);
+
+    const result = validate(joinSchema, { nickname, code });
+    if (!result.ok) {
+      setErrors(result.errors);
+      return;
+    }
+
+    setErrors({});
     setSubmitting(true);
     try {
       const id = await rpc<string>("join_household", {
-        p_code: trimmedCode,
-        p_nickname: trimmedNickname,
+        p_code: result.data.code,
+        p_nickname: result.data.nickname,
       });
       router.replace({ pathname: "/household/[id]", params: { id } });
     } catch (cause) {
@@ -51,19 +94,11 @@ export default function JoinHouseholdScreen() {
         contentContainerClassName="grow gap-6 px-6 pb-4 pt-2"
         keyboardShouldPersistTaps="handled"
       >
-        <View className="flex-row">
-          <BackButton onPress={() => router.back()} />
-        </View>
-
-        <View className="gap-2">
-          <Text className="font-sans-bold text-4xl text-graphite dark:text-on-graphite">
-            Join your family.
-          </Text>
-          <Text className="font-sans text-lg text-muted dark:text-silver">
-            Ask the household owner for their invite code — they&apos;ll find it
-            in Settings.
-          </Text>
-        </View>
+        <PageHeader
+          back={() => router.back()}
+          title="Join your family."
+          subtitle="Ask the household owner for their invite code — they'll find it in Settings."
+        />
 
         <View className="gap-2">
           <Text className="font-sans-medium text-sm text-muted dark:text-silver">
@@ -71,7 +106,12 @@ export default function JoinHouseholdScreen() {
           </Text>
           <TextField
             value={nickname}
-            onChangeText={setNickname}
+            onChangeText={(value) => {
+              setNickname(value);
+              clearError("nickname");
+            }}
+            error={errors.nickname}
+            accessibilityLabel="Nickname"
             placeholder="How they'll see you"
             autoCapitalize="words"
             autoCorrect={false}
@@ -86,7 +126,12 @@ export default function JoinHouseholdScreen() {
           </Text>
           <TextField
             value={code}
-            onChangeText={setCode}
+            onChangeText={(value) => {
+              setCode(value);
+              clearError("code");
+            }}
+            error={errors.code}
+            accessibilityLabel="Invite code"
             placeholder="Paste the invite code"
             autoCapitalize="none"
             autoCorrect={false}
@@ -94,12 +139,18 @@ export default function JoinHouseholdScreen() {
             returnKeyType="done"
             onSubmitEditing={handleJoin}
           />
+          <BrandButton
+            fullWidth
+            variant="outlined"
+            label="Scan QR code"
+            onPress={() => setScanning(true)}
+          />
         </View>
 
         <View className="flex-1" />
 
         {error ? (
-          <Text className="text-center font-sans text-lg text-destructive">
+          <Text className="text-center font-sans text-lg text-destructive-ink dark:text-destructive">
             {error}
           </Text>
         ) : null}
@@ -113,10 +164,14 @@ export default function JoinHouseholdScreen() {
         <BrandButton
           fullWidth
           label={submitting ? "Joining…" : "Join household"}
-          disabled={!canJoin}
+          disabled={submitting || offline}
           onPress={handleJoin}
         />
       </ScrollView>
+
+      {scanning ? (
+        <QrScanner onClose={() => setScanning(false)} onScan={handleScan} />
+      ) : null}
     </SafeAreaView>
   );
 }

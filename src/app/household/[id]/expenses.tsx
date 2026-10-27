@@ -5,13 +5,16 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Sheet } from "@/components/ui/Sheet";
+import { ExpenseRow } from "@/features/household/components/ExpenseRow";
+import { MonthSwitcher } from "@/features/household/components/MonthSwitcher";
 import {
   formatExpenseDate,
   formatMoney,
   fromSqlTimestamp,
   monthBounds,
-  MONTHS,
 } from "@/features/household/format";
 import { useHousehold } from "@/features/household/HouseholdProvider";
 import { EXPENSES_SQL } from "@/features/household/sql";
@@ -36,10 +39,6 @@ export default function ExpensesScreen() {
     monthEnd,
   ]);
 
-  const now = new Date();
-  const isCurrentMonth =
-    month.getFullYear() === now.getFullYear() &&
-    month.getMonth() === now.getMonth();
   const currency = household?.currency_code ?? "PHP";
 
   const categories = [
@@ -73,7 +72,7 @@ export default function ExpensesScreen() {
           })),
         ]
       : [
-          { key: null, label: "All Categories" },
+          { key: null, label: "All categories" },
           ...categories.map((category) => ({ key: category, label: category })),
         ];
   const selectedFilter =
@@ -81,13 +80,6 @@ export default function ExpensesScreen() {
   const spenderFilterLabel =
     members.find((member) => member.user_id === spenderFilter)?.nickname ??
     "Everyone";
-
-  const changeMonth = (offset: number) => {
-    setMonth(
-      (current) =>
-        new Date(current.getFullYear(), current.getMonth() + offset, 1),
-    );
-  };
 
   const chooseFilter = (key: string | null) => {
     if (openSheet === "spender") setSpenderFilter(key);
@@ -111,63 +103,50 @@ export default function ExpensesScreen() {
         className="flex-1"
         contentContainerClassName="gap-5 px-6 pb-10 pt-2"
       >
-        <Text className="font-sans-bold text-4xl text-graphite dark:text-on-graphite">
-          Expenses
-        </Text>
+        <PageHeader title="Expenses" />
 
-        <View className="flex-row items-center justify-between rounded-2xl border border-edge bg-surface px-2 py-1 dark:border-graphite-border dark:bg-graphite-surface">
-          <Pressable
-            className="active:opacity-60 h-10 w-10 items-center justify-center"
-            onPress={() => changeMonth(-1)}
-          >
-            <Ionicons name="chevron-back" size={20} color={colors.textMuted} />
-          </Pressable>
-
-          <Text className="font-sans-semibold text-lg text-graphite dark:text-on-graphite">
-            {MONTHS[month.getMonth()]} {month.getFullYear()}
-          </Text>
-
-          <Pressable
-            accessibilityState={{ disabled: isCurrentMonth }}
-            className={`h-10 w-10 items-center justify-center ${
-              isCurrentMonth ? "opacity-30" : "active:opacity-60"
-            }`}
-            disabled={isCurrentMonth}
-            onPress={() => changeMonth(1)}
-          >
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={isCurrentMonth ? colors.placeholder : colors.textMuted}
-            />
-          </Pressable>
-        </View>
+        <MonthSwitcher month={month} onChange={setMonth} />
 
         <View className="flex-row items-end justify-between">
           <Text className="font-sans text-base text-muted dark:text-silver">
             {filtered.length} expense{filtered.length === 1 ? "" : "s"}
           </Text>
-          <Text className="font-sans-bold text-2xl text-graphite dark:text-on-graphite">
+          <Text
+            style={{ fontVariant: ["tabular-nums"] }}
+            className="font-sans-bold text-2xl text-graphite dark:text-on-graphite"
+          >
             {formatMoney(total, currency)}
           </Text>
         </View>
 
         <View className="flex-row gap-3">
           <Pressable
-            className="active:opacity-70 h-12 flex-1 flex-row items-center gap-2 rounded-2xl border border-edge bg-surface px-4 dark:border-graphite-border dark:bg-graphite-surface"
+            className={`active:opacity-70 h-12 flex-1 flex-row items-center gap-2 rounded-2xl border px-4 ${
+              categoryFilter !== null
+                ? "border-mint-ink bg-selected dark:border-mint dark:bg-selected-dark"
+                : "border-edge bg-surface dark:border-graphite-border dark:bg-graphite-surface"
+            }`}
+            accessibilityRole="button"
+            accessibilityLabel={`Category, ${categoryFilter ?? "All categories"}`}
             onPress={() => setOpenSheet("category")}
           >
             <Text
               className="flex-1 font-sans text-base text-graphite dark:text-on-graphite"
               numberOfLines={1}
             >
-              {categoryFilter ?? "All Categories"}
+              {categoryFilter ?? "Category"}
             </Text>
             <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
           </Pressable>
 
           <Pressable
-            className="active:opacity-70 h-12 flex-1 flex-row items-center gap-2 rounded-2xl border border-edge bg-surface px-4 dark:border-graphite-border dark:bg-graphite-surface"
+            className={`active:opacity-70 h-12 flex-1 flex-row items-center gap-2 rounded-2xl border px-4 ${
+              spenderFilter !== null
+                ? "border-mint-ink bg-selected dark:border-mint dark:bg-selected-dark"
+                : "border-edge bg-surface dark:border-graphite-border dark:bg-graphite-surface"
+            }`}
+            accessibilityRole="button"
+            accessibilityLabel={`Spender, ${spenderFilterLabel}`}
             onPress={() => setOpenSheet("spender")}
           >
             <Text
@@ -181,21 +160,19 @@ export default function ExpensesScreen() {
         </View>
 
         {filtered.length === 0 ? (
-          <View className="items-center justify-center gap-3 py-16">
-            <View className="h-14 w-14 items-center justify-center rounded-3xl bg-selected dark:bg-selected-dark">
-              <Ionicons name="receipt-outline" size={28} color={colors.mint} />
-            </View>
-            <Text className="font-sans-semibold text-xl text-graphite dark:text-on-graphite">
-              {expenses.length === 0
+          <EmptyState
+            icon="receipt-outline"
+            title={
+              expenses.length === 0
                 ? "No expenses this month"
-                : "No matching expenses"}
-            </Text>
-            <Text className="text-center font-sans text-base text-muted dark:text-silver">
-              {expenses.length === 0
+                : "No matching expenses"
+            }
+            body={
+              expenses.length === 0
                 ? "Tap the + button to add one."
-                : "Try another category or spender."}
-            </Text>
-          </View>
+                : "Try another category or spender."
+            }
+          />
         ) : (
           <View className="gap-5">
             {groups.map((group) => (
@@ -205,48 +182,21 @@ export default function ExpensesScreen() {
                 </Text>
 
                 <View className="overflow-hidden rounded-2xl border border-edge bg-surface dark:border-graphite-border dark:bg-graphite-surface">
-                  {group.expenses.map((expense, index) => {
-                    const editable = canEdit(expense);
-
-                    return (
-                      <Pressable
-                        key={expense.id}
-                        className={`flex-row items-start gap-3 px-4 py-3 ${
-                          index < group.expenses.length - 1
-                            ? "border-b border-edge dark:border-graphite-border"
-                            : ""
-                        } ${editable ? "active:opacity-80" : ""}`}
-                        disabled={!editable}
-                        onPress={() => openEditor(expense)}
-                      >
-                        <View className="h-10 w-10 items-center justify-center rounded-2xl bg-selected dark:bg-selected-dark">
-                          <Text className="font-sans-semibold text-base text-mint">
-                            {expense.category.charAt(0).toUpperCase() || "?"}
-                          </Text>
-                        </View>
-
-                        <View className="flex-1 gap-0.5">
-                          <Text
-                            className="font-sans-semibold text-lg text-graphite dark:text-on-graphite"
-                            numberOfLines={1}
-                          >
-                            {expense.title}
-                          </Text>
-                          <Text
-                            className="font-sans text-sm text-muted dark:text-silver"
-                            numberOfLines={1}
-                          >
-                            {expense.category} ·{" "}
-                            {expense.spender_nickname ?? "Unknown"}
-                          </Text>
-                        </View>
-
-                        <Text className="font-sans-semibold text-base text-graphite dark:text-on-graphite">
-                          {formatMoney(Number(expense.amount), currency)}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
+                  {group.expenses.map((expense, index) => (
+                    <View key={expense.id} className="px-4">
+                      <ExpenseRow
+                        currency={currency}
+                        divider={index < group.expenses.length - 1}
+                        expense={expense}
+                        meId={me?.user_id}
+                        onPress={
+                          canEdit(expense)
+                            ? () => openEditor(expense)
+                            : undefined
+                        }
+                      />
+                    </View>
+                  ))}
                 </View>
               </View>
             ))}
@@ -266,6 +216,8 @@ export default function ExpensesScreen() {
           {filterOptions.map((option) => (
             <Pressable
               key={option.key ?? "all"}
+              accessibilityRole="button"
+              accessibilityState={{ selected: selectedFilter === option.key }}
               className={`active:opacity-70 flex-row items-center justify-between rounded-xl px-3 py-3 ${
                 selectedFilter === option.key
                   ? "bg-selected dark:bg-selected-dark"

@@ -60,6 +60,7 @@ export default function OnboardingScreen() {
         pagingEnabled
         decelerationRate="fast"
         disableIntervalMomentum
+        showsHorizontalScrollIndicator={false}
         onScroll={onScroll}
         className="flex-1"
       >

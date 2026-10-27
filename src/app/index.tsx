@@ -1,12 +1,12 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useQuery, useStatus } from "@powersync/react";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppLogo } from "@/components/ui/AppLogo";
 import { BrandButton } from "@/components/ui/BrandButton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { HouseholdRow } from "@/features/household/components/HouseholdRow";
 import { formatMoney, monthBounds, MONTHS } from "@/features/household/format";
@@ -14,11 +14,10 @@ import { HOUSEHOLDS_SQL } from "@/features/household/sql";
 import type { HouseholdListItem } from "@/features/household/types";
 import { useSession } from "@/lib/auth";
 import { logout } from "@/powersync/system";
-import { useTheme } from "@/theme/ThemeProvider";
 
 export default function HouseholdsScreen() {
   const router = useRouter();
-  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const session = useSession();
   const { connected, hasSynced } = useStatus();
 
@@ -48,37 +47,35 @@ export default function HouseholdsScreen() {
   };
 
   return (
-    <SafeAreaView
-      edges={["top", "bottom"]}
-      className="flex-1 bg-canvas dark:bg-graphite"
-    >
-      <View className="flex-row items-center justify-between px-6 pt-2">
-        <AppLogo />
-        <ThemeToggle />
-      </View>
-
-      <View className="flex-1 px-6 pt-6">
-        <Text className="font-sans-bold text-3xl text-graphite dark:text-on-graphite">
+    <SafeAreaView edges={["top"]} className="flex-1 bg-graphite">
+      <View className="gap-5 px-6 pb-6 pt-2">
+        <View className="flex-row items-center justify-between">
+          <AppLogo tone="dark" />
+          <ThemeToggle />
+        </View>
+        <Text className="font-sans-bold text-3xl text-on-graphite">
           Your households
         </Text>
+      </View>
 
-        {households.length === 0 ? (
-          hasSynced ? (
-            <View className="flex-1 items-center justify-center gap-3 px-8">
-              <View className="h-14 w-14 items-center justify-center rounded-3xl bg-selected dark:bg-selected-dark">
-                <Ionicons name="home-outline" size={28} color={colors.mint} />
+      <View className="flex-1 overflow-hidden rounded-t-3xl bg-surface dark:bg-graphite-surface">
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="grow px-6 pt-2"
+          showsVerticalScrollIndicator={false}
+        >
+          {households.length === 0 ? (
+            hasSynced ? (
+              <View className="flex-1 justify-center">
+                <EmptyState
+                  icon="home-outline"
+                  title="No households yet"
+                  body="Create one or join with a code to get started."
+                />
               </View>
-              <Text className="font-sans-semibold text-xl text-graphite dark:text-on-graphite">
-                No households yet
-              </Text>
-              <Text className="text-center font-sans text-base text-muted dark:text-silver">
-                Create one or join with a code to get started.
-              </Text>
-            </View>
-          ) : null
-        ) : (
-          <View className="mt-3 gap-3">
-            {households.map((household) => (
+            ) : null
+          ) : (
+            households.map((household, index) => (
               <HouseholdRow
                 key={household.id}
                 name={household.name}
@@ -88,6 +85,7 @@ export default function HouseholdsScreen() {
                   household.month_total,
                   household.currency_code,
                 )}
+                divider={index < households.length - 1}
                 onPress={() =>
                   router.navigate({
                     pathname: "/household/[id]",
@@ -95,37 +93,44 @@ export default function HouseholdsScreen() {
                   })
                 }
               />
-            ))}
-          </View>
-        )}
-      </View>
+            ))
+          )}
+        </ScrollView>
 
-      <View className="gap-2 px-6 pb-4">
-        {offline ? (
-          <Text className="text-center font-sans text-lg text-muted dark:text-silver">
-            Creating, joining, and signing out need a connection.
-          </Text>
-        ) : null}
-        <BrandButton
-          fullWidth
-          label="Create household"
-          disabled={offline}
-          onPress={() => router.navigate("/household/create")}
-        />
-        <BrandButton
-          variant="text"
-          label="Join with invite code"
-          disabled={offline}
-          onPress={() => router.navigate("/household/join")}
-        />
-        <View className="mt-2 border-t border-edge pt-4 dark:border-graphite-border">
+        <View
+          className="gap-2 border-t border-edge px-6 pt-4 dark:border-graphite-border"
+          style={{ paddingBottom: insets.bottom + 16 }}
+        >
+          {offline ? (
+            <Text className="pb-1 text-center font-sans text-sm text-muted dark:text-silver">
+              Creating, joining, and signing out need a connection.
+            </Text>
+          ) : null}
           <BrandButton
             fullWidth
-            variant="outlined"
-            label={signingOut ? "Signing out…" : "Sign out"}
-            disabled={signingOut || offline}
-            onPress={signOut}
+            label="Create household"
+            disabled={offline}
+            onPress={() => router.navigate("/household/create")}
           />
+          <BrandButton
+            variant="text"
+            label="Join with invite code"
+            disabled={offline}
+            onPress={() => router.navigate("/household/join")}
+          />
+          <Pressable
+            disabled={signingOut || offline}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: signingOut || offline }}
+            onPress={signOut}
+            className={`active:opacity-60 items-center py-2.5 ${
+              signingOut || offline ? "opacity-40" : ""
+            }`}
+          >
+            <Text className="font-sans-medium text-sm text-muted dark:text-silver">
+              {signingOut ? "Signing out…" : "Sign out"}
+            </Text>
+          </Pressable>
         </View>
       </View>
     </SafeAreaView>

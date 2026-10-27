@@ -5,6 +5,7 @@ export type HouseholdRowProps = {
   members: number;
   month: string;
   total: string;
+  divider?: boolean;
   onPress: () => void;
 };
 
@@ -13,15 +14,19 @@ export function HouseholdRow({
   members,
   month,
   total,
+  divider,
   onPress,
 }: HouseholdRowProps) {
   return (
     <Pressable
       onPress={onPress}
-      className="active:opacity-80 flex-row items-center gap-3 rounded-2xl border border-edge bg-surface px-4 py-4 dark:border-graphite-border dark:bg-graphite-surface"
+      accessibilityRole="button"
+      className={`active:opacity-70 flex-row items-center gap-3 py-4 ${
+        divider ? "border-b border-edge dark:border-graphite-border" : ""
+      }`}
     >
       <View className="h-11 w-11 items-center justify-center rounded-2xl bg-selected dark:bg-selected-dark">
-        <Text className="font-sans-semibold text-lg text-mint">
+        <Text className="font-sans-semibold text-lg text-mint-ink dark:text-mint">
           {name.charAt(0).toUpperCase()}
         </Text>
       </View>
@@ -45,7 +50,10 @@ export function HouseholdRow({
         <Text className="font-sans text-xs text-muted dark:text-silver">
           {month}
         </Text>
-        <Text className="font-sans-semibold text-sm text-graphite dark:text-on-graphite">
+        <Text
+          style={{ fontVariant: ["tabular-nums"] }}
+          className="font-sans-semibold text-base text-graphite dark:text-on-graphite"
+        >
           {total}
         </Text>
       </View>

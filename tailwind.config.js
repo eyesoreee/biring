@@ -14,10 +14,12 @@ module.exports = {
       },
       colors: {
         // Brand
-        mint: "#2dd4a8", // bg-mint — primary buttons, active indicators, FAB
+        mint: "#2dd4a8", // bg-mint — fills only (buttons, FAB, bars on graphite)
+        "mint-ink": "#0b7a5c", // text-mint-ink — mint-coloured text/icons on paper
         "mint-hover": "#26c299", // bg-mint-hover — pressed/hover state
         "on-mint": "#123329", // text-on-mint — labels/icons on mint
-        destructive: "#ef4444", // bg-destructive / text-destructive — delete/leave
+        destructive: "#ef4444", // bg-destructive — danger fills on graphite
+        "destructive-ink": "#c81e1e", // text-destructive-ink — errors on paper
 
         // Selected surface (pair with dark: variant in classes)
         selected: "#e6f9f3", // bg-selected — active tiles/badges (light)
@@ -35,8 +37,8 @@ module.exports = {
         surface: "#ffffff", // bg-surface — cards/modals (use dark:bg-graphite-surface)
         edge: "#e2e5e8", // border-edge — hairlines (use dark:border-graphite-border)
         muted: "#6a7078", // text-muted — secondary text (use dark:text-silver)
-        placeholder: "#9aa0a6", // placeholder:text-placeholder (use dark:placeholder:text-placeholder-dark)
-        "placeholder-dark": "#7f858d", // dark:placeholder:text-placeholder-dark
+        placeholder: "#6f757d", // placeholder:text-placeholder (use dark:placeholder:text-placeholder-dark)
+        "placeholder-dark": "#9aa0a6", // dark:placeholder:text-placeholder-dark
       },
     },
   },

@@ -8,6 +8,7 @@ import {
   DefaultTheme,
   ThemeProvider as NavigationThemeProvider,
   Stack,
+  usePathname,
   useSegments,
 } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -41,12 +42,14 @@ export default function RootLayout() {
 function RootNavigator() {
   const { scheme, colors } = useTheme();
   const segments = useSegments();
+  const pathname = usePathname();
   const session = useSession();
 
-  const onDashboard =
-    segments[0] === "household" &&
-    segments.length === 2 &&
-    segments[1] === "[id]";
+  const onCover =
+    (!!session && pathname === "/") ||
+    (segments[0] === "household" &&
+      segments[1] === "[id]" &&
+      (segments.length === 2 || segments[2] === "summary"));
 
   useEffect(() => {
     if (session !== undefined) SplashScreen.hideAsync();
@@ -72,9 +75,7 @@ function RootNavigator() {
   return (
     <PowerSyncContext.Provider value={powersync}>
       <NavigationThemeProvider value={navigationTheme}>
-        <StatusBar
-          style={scheme === "dark" || onDashboard ? "light" : "dark"}
-        />
+        <StatusBar style={scheme === "dark" || onCover ? "light" : "dark"} />
         <Stack
           screenOptions={{
             contentStyle: { backgroundColor: colors.background },

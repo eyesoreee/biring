@@ -16,7 +16,9 @@ export function StepProgress({ completed, total }: StepProgressProps) {
           <View
             key={index}
             className={`h-1.5 flex-1 rounded-full ${
-              index < completed ? "bg-mint" : "bg-edge dark:bg-graphite-border"
+              index < completed
+                ? "bg-mint-ink dark:bg-mint"
+                : "bg-edge dark:bg-graphite-border"
             }`}
           />
         ))}

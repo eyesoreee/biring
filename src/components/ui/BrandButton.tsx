@@ -36,12 +36,14 @@ export function BrandButton({
     : isOutlined
       ? "text-graphite dark:text-on-graphite"
       : variant === "destructive"
-        ? "text-destructive"
-        : "text-mint";
+        ? "text-destructive-ink dark:text-destructive"
+        : "text-mint-ink dark:text-mint";
 
   return (
     <Pressable
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled }}
       onPress={onPress}
       onPressIn={() => {
         setPressed(true);

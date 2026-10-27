@@ -49,15 +49,20 @@ export function BottomTabBar({
         return (
           <Fragment key={route.key}>
             <Pressable
-              accessibilityRole="button"
+              accessibilityRole="tab"
               accessibilityState={{ selected: focused }}
-              accessibilityLabel={options.tabBarAccessibilityLabel}
+              accessibilityLabel={
+                options.tabBarAccessibilityLabel ?? options.title
+              }
               onPress={onPress}
               className="flex-1 items-center justify-center gap-1"
             >
               {options.tabBarIcon?.({ focused, color, size: 22 })}
               <Text
-                className={`font-sans-medium text-[11px] ${focused ? "text-mint" : "text-muted dark:text-silver"}`}
+                numberOfLines={1}
+                className={`font-sans-medium text-xs ${
+                  focused ? "text-mint-ink dark:text-mint" : "text-muted dark:text-silver"
+                }`}
               >
                 {options.title}
               </Text>
@@ -78,7 +83,7 @@ export function BottomTabBar({
           borderRadius: FAB_SIZE / 2,
           left: "50%",
           marginLeft: -FAB_SIZE / 2,
-          bottom: insets.bottom + BAR_HEIGHT / 2,
+          bottom: insets.bottom + BAR_HEIGHT - FAB_SIZE / 2,
           elevation: 4,
         }}
       >

@@ -17,9 +17,11 @@
 
   /* Brand */
   --color-mint: #2dd4a8;
+  --color-mint-ink: #0b7a5c;
   --color-mint-hover: #26c299;
   --color-on-mint: #123329;
   --color-destructive: #ef4444;
+  --color-destructive-ink: #c81e1e;
 
   /* Selected surface */
   --color-selected: #e6f9f3;
@@ -36,6 +38,8 @@
   --color-canvas: #f5f6f7;
   --color-surface: #ffffff;
   --color-text: #17191c;
+  --color-placeholder: #6f757d;
+  --color-placeholder-dark: #9aa0a6;
 
   /* Semantic aliases — flip with the scheme, mirrors
    * bg-canvas dark:bg-graphite / bg-surface dark:bg-graphite-surface */

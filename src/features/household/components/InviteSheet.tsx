@@ -1,4 +1,6 @@
+import { createURL } from "expo-linking";
 import { Share, Text, View } from "react-native";
+import QRCode from "react-native-qrcode-svg";
 
 import { BrandButton } from "@/components/ui/BrandButton";
 import { Sheet } from "@/components/ui/Sheet";
@@ -14,10 +16,16 @@ export function InviteSheet({
   onClose: () => void;
   household?: Household;
 }) {
+  const link = household
+    ? createURL("/household/join", {
+        queryParams: { code: household.invite_code },
+      })
+    : null;
+
   const shareInvite = () => {
-    if (!household) return;
+    if (!household || !link) return;
     Share.share({
-      message: `Join ${household.name} on biring with this invite code: ${household.invite_code}`,
+      message: `Join ${household.name} on biring: ${link}`,
     }).catch(() => {});
   };
 
@@ -27,8 +35,17 @@ export function InviteSheet({
         Invite a family member
       </Text>
       <Text className="font-sans text-base text-muted dark:text-silver">
-        Anyone with this code can join this household.
+        Scan with a camera to join, or share the link.
       </Text>
+
+      {link ? (
+        <View className="items-center">
+          <View className="rounded-2xl bg-white p-4">
+            <QRCode value={link} size={190} />
+          </View>
+        </View>
+      ) : null}
+
       <Text
         selectable
         className="rounded-2xl border border-edge bg-canvas px-4 py-3 text-center font-sans-medium text-lg tracking-wider text-graphite dark:border-graphite-border dark:bg-graphite-surface dark:text-on-graphite"
