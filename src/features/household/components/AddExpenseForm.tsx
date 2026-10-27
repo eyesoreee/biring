@@ -22,7 +22,7 @@ import { TextField } from "@/components/ui/TextField";
 import {
   addExpense,
   editExpense,
-  isValidAmount,
+  expenseSchema,
   normalizeAmountInput,
   voidExpense,
 } from "@/features/household/expenses";
@@ -33,6 +33,7 @@ import {
 } from "@/features/household/format";
 import { useHousehold } from "@/features/household/HouseholdProvider";
 import type { EditableExpense } from "@/features/household/types";
+import { validate, type FieldErrors } from "@/lib/forms";
 import { useTheme } from "@/theme/ThemeProvider";
 
 export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
@@ -50,19 +51,24 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
   const [amountFocused, setAmountFocused] = useState(false);
   const [noteFocused, setNoteFocused] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [showVoid, setShowVoid] = useState(false);
   const [voidReason, setVoidReason] = useState("");
   const [voiding, setVoiding] = useState(false);
 
   const currency = household?.currency_code ?? "PHP";
-  const amountValid = isValidAmount(amount);
-  const canSave =
-    amountValid && !!category.trim() && !!title.trim() && !!me && !saving;
   const canVoid = !!expense && me?.role === "owner";
-  const missingRequired = !amountValid || !category.trim() || !title.trim();
-  const showAmountError = !!amount && !amountValid && !amountFocused;
   const formattedDate = formatExpenseDate(date);
+
+  const clearError = (field: string) => {
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
 
   const close = () => {
     if (router.canGoBack()) router.back();
@@ -70,15 +76,28 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
   };
 
   const handleSave = async () => {
-    if (!canSave || !me) return;
+    if (saving || !me) return;
 
     Keyboard.dismiss();
     setError(null);
+
+    const result = validate(expenseSchema, {
+      title,
+      amount,
+      category,
+      note,
+      spentAt: date,
+    });
+    if (!result.ok) {
+      setErrors(result.errors);
+      return;
+    }
+
+    setErrors({});
     setSaving(true);
     try {
-      const input = { title, amount, category, note, spentAt: date };
-      if (expense) await editExpense(expense.id, input);
-      else await addExpense(id, me.user_id, input);
+      if (expense) await editExpense(expense.id, result.data);
+      else await addExpense(id, me.user_id, result.data);
       close();
     } catch (cause) {
       setError(
@@ -139,9 +158,11 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
             </Text>
             <View
               className={`flex-row items-center gap-3 rounded-2xl border bg-surface px-4 py-4 dark:bg-graphite-surface ${
-                amountFocused
-                  ? "border-mint-ink dark:border-mint"
-                  : "border-edge dark:border-graphite-border"
+                errors.amount
+                  ? "border-destructive-ink dark:border-destructive"
+                  : amountFocused
+                    ? "border-mint-ink dark:border-mint"
+                    : "border-edge dark:border-graphite-border"
               }`}
             >
               <Text className="font-sans-semibold text-3xl text-muted dark:text-silver">
@@ -156,7 +177,10 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
                 keyboardType="decimal-pad"
                 maxLength={12}
                 onBlur={() => setAmountFocused(false)}
-                onChangeText={(value) => setAmount(normalizeAmountInput(value))}
+                onChangeText={(value) => {
+                  setAmount(normalizeAmountInput(value));
+                  clearError("amount");
+                }}
                 onFocus={() => setAmountFocused(true)}
                 placeholder="0.00"
                 placeholderTextColor={colors.placeholder}
@@ -166,9 +190,9 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
                 {currency}
               </Text>
             </View>
-            {showAmountError ? (
+            {errors.amount ? (
               <Text className="font-sans text-sm text-destructive-ink dark:text-destructive">
-                Enter an amount greater than zero, with up to two decimals.
+                {errors.amount}
               </Text>
             ) : null}
           </View>
@@ -180,8 +204,12 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
             <TextField
               accessibilityLabel="Category"
               autoCapitalize="words"
+              error={errors.category}
               maxLength={40}
-              onChangeText={setCategory}
+              onChangeText={(value) => {
+                setCategory(value);
+                clearError("category");
+              }}
               placeholder="Food, bills, transport…"
               returnKeyType="next"
               value={category}
@@ -225,8 +253,12 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
             <TextField
               accessibilityLabel="Title"
               autoCapitalize="sentences"
+              error={errors.title}
               maxLength={80}
-              onChangeText={setTitle}
+              onChangeText={(value) => {
+                setTitle(value);
+                clearError("title");
+              }}
               placeholder="What was it for?"
               returnKeyType="next"
               value={title}
@@ -244,21 +276,32 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
             </View>
             <TextInput
               accessibilityLabel="Note, optional"
+              accessibilityHint={errors.note}
               className={`min-h-[112px] rounded-2xl border bg-surface px-4 py-3 font-sans text-lg text-graphite dark:bg-graphite-surface dark:text-on-graphite ${
-                noteFocused
-                  ? "border-mint-ink dark:border-mint"
-                  : "border-edge dark:border-graphite-border"
+                errors.note
+                  ? "border-destructive-ink dark:border-destructive"
+                  : noteFocused
+                    ? "border-mint-ink dark:border-mint"
+                    : "border-edge dark:border-graphite-border"
               }`}
               maxLength={300}
               multiline
               onBlur={() => setNoteFocused(false)}
-              onChangeText={setNote}
+              onChangeText={(value) => {
+                setNote(value);
+                clearError("note");
+              }}
               onFocus={() => setNoteFocused(true)}
               placeholder="Anything to remember?"
               placeholderTextColor={colors.placeholder}
               textAlignVertical="top"
               value={note}
             />
+            {errors.note ? (
+              <Text className="font-sans text-sm text-destructive-ink dark:text-destructive">
+                {errors.note}
+              </Text>
+            ) : null}
           </View>
 
           <View className="flex-1" />
@@ -269,15 +312,9 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
             </Text>
           ) : null}
 
-          {missingRequired && !showAmountError ? (
-            <Text className="text-center font-sans text-sm text-muted dark:text-silver">
-              Add an amount, category, and title to save.
-            </Text>
-          ) : null}
-
           <View className="gap-2">
             <BrandButton
-              disabled={!canSave}
+              disabled={saving}
               fullWidth
               label={
                 saving ? "Saving…" : expense ? "Save changes" : "Save expense"
@@ -346,6 +383,7 @@ export function AddExpenseForm({ expense }: { expense?: EditableExpense }) {
           </View>
           <TextField
             accessibilityLabel="Void reason (optional)"
+            maxLength={200}
             onChangeText={setVoidReason}
             placeholder="Why are you voiding this?"
             value={voidReason}

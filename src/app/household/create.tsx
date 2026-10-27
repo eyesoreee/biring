@@ -4,16 +4,32 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { z } from "zod";
 
 import { BackButton } from "@/components/ui/BackButton";
 import { BrandButton } from "@/components/ui/BrandButton";
 import { StepProgress } from "@/components/ui/StepProgress";
 import { TextField } from "@/components/ui/TextField";
 import { useSession } from "@/lib/auth";
+import { validate, type FieldErrors } from "@/lib/forms";
 import { rpc } from "@/powersync/rpc";
 import { useTheme } from "@/theme/ThemeProvider";
 
 const CURRENCIES = ["PHP", "USD", "EUR", "GBP", "JPY"];
+
+const householdSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Give your household a name")
+    .max(32, "Keep the name under 32 characters"),
+  nickname: z
+    .string()
+    .trim()
+    .min(1, "Add a nickname")
+    .max(24, "Keep the nickname under 24 characters"),
+  currency: z.string().min(1, "Pick a currency"),
+});
 
 export default function CreateHouseholdScreen() {
   const router = useRouter();
@@ -26,6 +42,7 @@ export default function CreateHouseholdScreen() {
   );
   const [currency, setCurrency] = useState("PHP");
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
 
   const trimmedName = name.trim();
@@ -34,17 +51,32 @@ export default function CreateHouseholdScreen() {
     Boolean,
   ).length;
   const offline = !connected;
-  const canCreate =
-    !!trimmedName && !!trimmedNickname && !submitting && !offline;
+
+  const clearError = (field: string) => {
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
 
   const handleCreate = async () => {
     setError(null);
+
+    const result = validate(householdSchema, { name, nickname, currency });
+    if (!result.ok) {
+      setErrors(result.errors);
+      return;
+    }
+
+    setErrors({});
     setSubmitting(true);
     try {
       const id = await rpc<string>("create_household", {
-        p_name: trimmedName,
-        p_nickname: trimmedNickname,
-        p_currency: currency,
+        p_name: result.data.name,
+        p_nickname: result.data.nickname,
+        p_currency: result.data.currency,
       });
       router.replace({ pathname: "/household/[id]", params: { id } });
     } catch (cause) {
@@ -101,7 +133,11 @@ export default function CreateHouseholdScreen() {
           </Text>
           <TextField
             value={name}
-            onChangeText={setName}
+            onChangeText={(value) => {
+              setName(value);
+              clearError("name");
+            }}
+            error={errors.name}
             accessibilityLabel="Household name"
             placeholder="Home"
             autoCapitalize="words"
@@ -117,7 +153,11 @@ export default function CreateHouseholdScreen() {
           </Text>
           <TextField
             value={nickname}
-            onChangeText={setNickname}
+            onChangeText={(value) => {
+              setNickname(value);
+              clearError("nickname");
+            }}
+            error={errors.nickname}
             accessibilityLabel="Your nickname"
             placeholder="How they'll see you"
             autoCapitalize="words"
@@ -180,7 +220,7 @@ export default function CreateHouseholdScreen() {
         <BrandButton
           fullWidth
           label={submitting ? "Creating…" : "Create household"}
-          disabled={!canCreate}
+          disabled={submitting || offline}
           onPress={handleCreate}
         />
       </ScrollView>

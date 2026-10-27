@@ -3,12 +3,27 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { z } from "zod";
 
 import { BrandButton } from "@/components/ui/BrandButton";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TextField } from "@/components/ui/TextField";
 import { useSession } from "@/lib/auth";
+import { validate, type FieldErrors } from "@/lib/forms";
 import { rpc } from "@/powersync/rpc";
+
+const joinSchema = z.object({
+  nickname: z
+    .string()
+    .trim()
+    .min(1, "Add a nickname")
+    .max(24, "Keep the nickname under 24 characters"),
+  code: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[0-9a-f]{32}$/, "Enter the 32-character invite code"),
+});
 
 export default function JoinHouseholdScreen() {
   const router = useRouter();
@@ -19,20 +34,35 @@ export default function JoinHouseholdScreen() {
   );
   const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
 
-  const trimmedCode = code.trim();
-  const trimmedNickname = nickname.trim();
   const offline = !connected;
-  const canJoin = !!trimmedNickname && !!trimmedCode && !submitting && !offline;
+
+  const clearError = (field: string) => {
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
 
   const handleJoin = async () => {
     setError(null);
+
+    const result = validate(joinSchema, { nickname, code });
+    if (!result.ok) {
+      setErrors(result.errors);
+      return;
+    }
+
+    setErrors({});
     setSubmitting(true);
     try {
       const id = await rpc<string>("join_household", {
-        p_code: trimmedCode,
-        p_nickname: trimmedNickname,
+        p_code: result.data.code,
+        p_nickname: result.data.nickname,
       });
       router.replace({ pathname: "/household/[id]", params: { id } });
     } catch (cause) {
@@ -63,7 +93,11 @@ export default function JoinHouseholdScreen() {
           </Text>
           <TextField
             value={nickname}
-            onChangeText={setNickname}
+            onChangeText={(value) => {
+              setNickname(value);
+              clearError("nickname");
+            }}
+            error={errors.nickname}
             accessibilityLabel="Nickname"
             placeholder="How they'll see you"
             autoCapitalize="words"
@@ -79,7 +113,11 @@ export default function JoinHouseholdScreen() {
           </Text>
           <TextField
             value={code}
-            onChangeText={setCode}
+            onChangeText={(value) => {
+              setCode(value);
+              clearError("code");
+            }}
+            error={errors.code}
             accessibilityLabel="Invite code"
             placeholder="Paste the invite code"
             autoCapitalize="none"
@@ -107,7 +145,7 @@ export default function JoinHouseholdScreen() {
         <BrandButton
           fullWidth
           label={submitting ? "Joining…" : "Join household"}
-          disabled={!canJoin}
+          disabled={submitting || offline}
           onPress={handleJoin}
         />
       </ScrollView>

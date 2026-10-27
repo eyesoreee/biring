@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { powersync } from "@/powersync/system";
 
 import { toSqlTimestamp } from "./format";
@@ -37,25 +39,52 @@ export function isValidAmount(amount: string) {
   return AMOUNT_PATTERN.test(value) && Number.isFinite(parsed) && parsed > 0;
 }
 
-function normalizeExpense(input: ExpenseInput) {
-  const title = input.title.trim();
-  const category = input.category.trim();
-  const amount = input.amount.trim();
-  const spentAt = input.spentAt ?? new Date();
+function endOfToday() {
+  const date = new Date();
+  date.setHours(23, 59, 59, 999);
+  return date.getTime();
+}
 
-  if (!title) throw new Error("Title is required");
-  if (!category) throw new Error("Category is required");
-  if (!isValidAmount(amount)) {
-    throw new Error("Amount must be greater than zero");
-  }
-  if (Number.isNaN(spentAt.getTime())) throw new Error("Date is invalid");
+export const expenseSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, "Give this expense a title")
+    .max(80, "Keep the title under 80 characters"),
+  amount: z
+    .string()
+    .trim()
+    .refine(
+      isValidAmount,
+      "Enter an amount greater than zero, with up to two decimals",
+    ),
+  category: z
+    .string()
+    .trim()
+    .min(1, "Pick a category")
+    .max(40, "Keep the category under 40 characters"),
+  note: z
+    .string()
+    .trim()
+    .max(300, "Keep the note under 300 characters")
+    .optional()
+    .nullable(),
+  spentAt: z
+    .date()
+    .default(() => new Date())
+    .refine(
+      (date) => date.getTime() <= endOfToday(),
+      "Pick a date that isn't in the future",
+    ),
+});
+
+function normalizeExpense(input: ExpenseInput) {
+  const result = expenseSchema.safeParse(input);
+  if (!result.success) throw new Error(result.error.issues[0].message);
 
   return {
-    title,
-    amount,
-    category,
-    note: input.note?.trim() || null,
-    spentAt,
+    ...result.data,
+    note: result.data.note || null,
   };
 }
 
