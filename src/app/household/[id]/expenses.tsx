@@ -49,7 +49,8 @@ export default function ExpensesScreen() {
       (!categoryFilter || expense.category === categoryFilter) &&
       (!spenderFilter || expense.spender_id === spenderFilter),
   );
-  const total = filtered.reduce(
+  const active = filtered.filter((expense) => !expense.voided_at);
+  const total = active.reduce(
     (sum, expense) => sum + Number(expense.amount),
     0,
   );
@@ -88,7 +89,8 @@ export default function ExpensesScreen() {
   };
 
   const canEdit = (expense: ExpenseListItem) =>
-    me?.role === "owner" || expense.spender_id === me?.user_id;
+    !expense.voided_at &&
+    (me?.role === "owner" || expense.spender_id === me?.user_id);
 
   const openEditor = (expense: ExpenseListItem) => {
     router.push({
@@ -109,7 +111,7 @@ export default function ExpensesScreen() {
 
         <View className="flex-row items-end justify-between">
           <Text className="font-sans text-base text-muted dark:text-silver">
-            {filtered.length} expense{filtered.length === 1 ? "" : "s"}
+            {active.length} expense{active.length === 1 ? "" : "s"}
           </Text>
           <Text
             style={{ fontVariant: ["tabular-nums"] }}

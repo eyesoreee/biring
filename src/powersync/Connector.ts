@@ -48,7 +48,13 @@ export class Connector implements PowerSyncBackendConnector {
     } catch (e: unknown) {
       const code = (e as { code?: string })?.code;
       if (typeof code === "string" && FATAL.some((r) => r.test(code))) {
-        console.error("Data upload error - discarding:", lastOp, e);
+        console.error("Data upload error - discarding:", {
+          table: lastOp?.table,
+          op: lastOp?.op,
+          id: lastOp?.id,
+          code,
+          message: (e as { message?: string })?.message,
+        });
         await tx.complete();
       } else {
         throw e;

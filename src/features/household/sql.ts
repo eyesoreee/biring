@@ -56,11 +56,11 @@ export const RECENT_EXPENSES_SQL = `
 
 export const EXPENSES_SQL = `
   SELECT e.id, e.title, e.amount, e.category, e.spent_at, e.spender_id,
-         m.nickname AS spender_nickname
+         m.nickname AS spender_nickname, e.voided_at, e.voided_reason
   FROM expense e
   LEFT JOIN household_member m
     ON m.household_id = e.household_id AND m.user_id = e.spender_id
-  WHERE e.household_id = ? AND e.voided_at IS NULL
+  WHERE e.household_id = ?
     AND datetime(e.spent_at) >= datetime(?) AND datetime(e.spent_at) < datetime(?)
   ORDER BY e.spent_at DESC`;
 

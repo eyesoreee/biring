@@ -3,6 +3,7 @@ import "@azure/core-asynciterator-polyfill";
 
 import { PowerSyncContext } from "@powersync/react";
 import { useFonts } from "expo-font";
+import * as Linking from "expo-linking";
 import {
   DarkTheme,
   DefaultTheme,
@@ -16,6 +17,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo } from "react";
 
 import { AuthProvider, useSession } from "@/lib/auth";
+import { savePendingInvite } from "@/lib/pendingInvite";
 import { powersync } from "@/powersync/system";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 
@@ -53,6 +55,22 @@ function RootNavigator() {
 
   useEffect(() => {
     if (session !== undefined) SplashScreen.hideAsync();
+  }, [session]);
+
+  useEffect(() => {
+    if (session) return;
+
+    const capture = (url: string | null) => {
+      const code = url ? Linking.parse(url).queryParams?.code : null;
+      if (typeof code === "string" && /^[0-9a-f]{32}$/i.test(code))
+        savePendingInvite(code).catch(() => undefined);
+    };
+
+    Linking.getInitialURL().then(capture);
+    const subscription = Linking.addEventListener("url", ({ url }) =>
+      capture(url),
+    );
+    return () => subscription.remove();
   }, [session]);
 
   const navigationTheme = useMemo(() => {

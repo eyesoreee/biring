@@ -20,7 +20,16 @@ export function ExpenseRow({
   const spender = expense.spender_nickname
     ? `${expense.spender_nickname}${isMe ? " (you)" : ""}`
     : null;
-  const meta = [expense.category, spender].filter(Boolean).join(" · ");
+  const isVoided = Boolean(expense.voided_at);
+  const meta = [
+    expense.category,
+    spender,
+    isVoided
+      ? `Voided${expense.voided_reason ? `: ${expense.voided_reason}` : ""}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <Pressable
@@ -40,7 +49,11 @@ export function ExpenseRow({
       <View className="flex-1 gap-0.5">
         <Text
           numberOfLines={1}
-          className="font-sans-semibold text-base text-graphite dark:text-on-graphite"
+          className={`font-sans-semibold text-base ${
+            isVoided
+              ? "line-through text-muted dark:text-silver"
+              : "text-graphite dark:text-on-graphite"
+          }`}
         >
           {expense.title}
         </Text>
@@ -57,7 +70,11 @@ export function ExpenseRow({
       <Text
         numberOfLines={1}
         style={{ fontVariant: ["tabular-nums"] }}
-        className="font-sans-semibold text-base text-graphite dark:text-on-graphite"
+        className={`font-sans-semibold text-base ${
+          isVoided
+            ? "line-through text-muted dark:text-silver"
+            : "text-graphite dark:text-on-graphite"
+        }`}
       >
         {formatMoney(Number(expense.amount), currency)}
       </Text>

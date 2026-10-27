@@ -55,6 +55,8 @@ export type ExpenseListItem = {
   spent_at: string;
   spender_id: string;
   spender_nickname: string | null;
+  voided_at?: string | null;
+  voided_reason?: string | null;
 };
 
 export type EditableExpense = {

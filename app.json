@@ -7,6 +7,9 @@
     "icon": "./assets/images/icon.png",
     "scheme": "biring",
     "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.eyesoreee.biring"
+    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#17191c",
@@ -32,7 +35,8 @@
         {
           "cameraPermission": "Allow biring to scan household invite codes."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

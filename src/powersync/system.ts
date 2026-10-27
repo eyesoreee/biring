@@ -25,6 +25,10 @@ export async function logout() {
       `${stats.count} changes have not synced yet. Connect to the internet before logging out.`,
     );
   }
-  await powersync.disconnectAndClear();
   await supabase.auth.signOut();
+  const { data } = await supabase.auth.getSession();
+  if (data.session) {
+    throw new Error("Could not sign out. Please try again.");
+  }
+  await powersync.disconnectAndClear();
 }

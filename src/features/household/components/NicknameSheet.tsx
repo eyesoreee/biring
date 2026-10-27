@@ -69,7 +69,14 @@ export function NicknameSheet({
         onSubmitEditing={save}
       />
       <View className="flex-row justify-end gap-2">
-        <BrandButton variant="text" label="Cancel" onPress={onClose} />
+        <BrandButton
+          variant="text"
+          label="Cancel"
+          onPress={() => {
+            setError(null);
+            onClose();
+          }}
+        />
         <BrandButton label="Save" onPress={save} />
       </View>
     </Sheet>

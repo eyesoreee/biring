@@ -1,8 +1,18 @@
 import { useQuery, useStatus } from "@powersync/react";
 import { useRouter } from "expo-router";
-import { useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import { AppLogo } from "@/components/ui/AppLogo";
 import { BrandButton } from "@/components/ui/BrandButton";
@@ -13,12 +23,15 @@ import { formatMoney, monthBounds, MONTHS } from "@/features/household/format";
 import { HOUSEHOLDS_SQL } from "@/features/household/sql";
 import type { HouseholdListItem } from "@/features/household/types";
 import { useSession } from "@/lib/auth";
+import { takePendingInvite } from "@/lib/pendingInvite";
 import { logout } from "@/powersync/system";
+import { useTheme } from "@/theme/ThemeProvider";
 
 export default function HouseholdsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const session = useSession();
+  const { colors } = useTheme();
   const { connected, hasSynced } = useStatus();
 
   const now = new Date();
@@ -30,6 +43,18 @@ export default function HouseholdsScreen() {
   ]);
   const offline = !connected;
   const [signingOut, setSigningOut] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const code = await takePendingInvite();
+      if (!code || cancelled) return;
+      router.navigate({ pathname: "/household/join", params: { code } });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const signOut = async () => {
     setSigningOut(true);
@@ -73,7 +98,16 @@ export default function HouseholdsScreen() {
                   body="Create one or join with a code to get started."
                 />
               </View>
-            ) : null
+            ) : (
+              <View className="flex-1 items-center justify-center gap-3 px-6">
+                {offline ? null : <ActivityIndicator color={colors.mint} />}
+                <Text className="text-center font-sans text-base text-muted dark:text-silver">
+                  {offline
+                    ? "Connect to the internet to load your households."
+                    : "Syncing your households…"}
+                </Text>
+              </View>
+            )
           ) : (
             households.map((household, index) => (
               <HouseholdRow
