@@ -1,5 +1,6 @@
 import { useStatus } from "@powersync/react";
-import { useRouter } from "expo-router";
+import { parse } from "expo-linking";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,6 +9,7 @@ import { z } from "zod";
 import { BrandButton } from "@/components/ui/BrandButton";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TextField } from "@/components/ui/TextField";
+import { QrScanner } from "@/features/household/components/QrScanner";
 import { useSession } from "@/lib/auth";
 import { validate, type FieldErrors } from "@/lib/forms";
 import { rpc } from "@/powersync/rpc";
@@ -27,12 +29,16 @@ const joinSchema = z.object({
 
 export default function JoinHouseholdScreen() {
   const router = useRouter();
+  const { code: inviteCode } = useLocalSearchParams<{ code?: string }>();
   const session = useSession();
   const { connected } = useStatus();
   const [nickname, setNickname] = useState(
     () => session?.user.email?.split("@")[0] ?? "",
   );
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(() =>
+    typeof inviteCode === "string" ? inviteCode : "",
+  );
+  const [scanning, setScanning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +52,13 @@ export default function JoinHouseholdScreen() {
       delete next[field];
       return next;
     });
+  };
+
+  const handleScan = (data: string) => {
+    const scanned = parse(data).queryParams?.code;
+    setCode(typeof scanned === "string" ? scanned : data.trim());
+    clearError("code");
+    setScanning(false);
   };
 
   const handleJoin = async () => {
@@ -126,6 +139,12 @@ export default function JoinHouseholdScreen() {
             returnKeyType="done"
             onSubmitEditing={handleJoin}
           />
+          <BrandButton
+            fullWidth
+            variant="outlined"
+            label="Scan QR code"
+            onPress={() => setScanning(true)}
+          />
         </View>
 
         <View className="flex-1" />
@@ -149,6 +168,10 @@ export default function JoinHouseholdScreen() {
           onPress={handleJoin}
         />
       </ScrollView>
+
+      {scanning ? (
+        <QrScanner onClose={() => setScanning(false)} onScan={handleScan} />
+      ) : null}
     </SafeAreaView>
   );
 }

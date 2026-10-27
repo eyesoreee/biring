@@ -26,7 +26,13 @@
           "imageWidth": 140
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow biring to scan household invite codes."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
