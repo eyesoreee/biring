@@ -9,10 +9,12 @@ export function MemberRow({
   member,
   isMe,
   onEditNickname,
+  onManage,
 }: {
   member: Member;
   isMe: boolean;
   onEditNickname: () => void;
+  onManage?: () => void;
 }) {
   const { colors } = useTheme();
 
@@ -51,6 +53,20 @@ export function MemberRow({
           className="active:opacity-60 h-10 w-10 items-center justify-center"
         >
           <Ionicons name="pencil-outline" size={18} color={colors.textMuted} />
+        </Pressable>
+      ) : onManage ? (
+        <Pressable
+          onPress={onManage}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Manage ${member.nickname}`}
+          className="active:opacity-60 h-10 w-10 items-center justify-center"
+        >
+          <Ionicons
+            name="ellipsis-horizontal"
+            size={20}
+            color={colors.textMuted}
+          />
         </Pressable>
       ) : null}
     </View>

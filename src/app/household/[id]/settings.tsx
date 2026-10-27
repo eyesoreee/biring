@@ -10,9 +10,12 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { ArchiveSheet } from "@/features/household/components/ArchiveSheet";
 import { InviteSheet } from "@/features/household/components/InviteSheet";
+import { LeaveSheet } from "@/features/household/components/LeaveSheet";
 import { MemberRow } from "@/features/household/components/MemberRow";
+import { MemberSheet } from "@/features/household/components/MemberSheet";
 import { NicknameSheet } from "@/features/household/components/NicknameSheet";
 import { useHousehold } from "@/features/household/HouseholdProvider";
+import type { Member, Role } from "@/features/household/types";
 import { rpc } from "@/powersync/rpc";
 import { logout, powersync } from "@/powersync/system";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -35,7 +38,12 @@ export default function SettingsScreen() {
   const [editing, setEditing] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [managing, setManaging] = useState<Member | null>(null);
+  const [roleBusy, setRoleBusy] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  const canLeave = !!me && (me.role === "member" || members.length > 1);
 
   const openNickname = () => {
     if (!me) return;
@@ -83,6 +91,38 @@ export default function SettingsScreen() {
     }
   };
 
+  const changeRole = async (role: Role) => {
+    if (!managing) return;
+
+    setRoleBusy(true);
+    try {
+      await rpc("set_member_role", {
+        p_household_id: id,
+        p_user_id: managing.user_id,
+        p_role: role,
+      });
+      setManaging(null);
+    } catch (cause) {
+      alertError("Can't change role", cause);
+    } finally {
+      setRoleBusy(false);
+    }
+  };
+
+  const leave = async () => {
+    setBusy(true);
+    try {
+      await rpc("leave_household", { p_household_id: id });
+      setLeaving(false);
+      router.navigate("/");
+    } catch (cause) {
+      setLeaving(false);
+      alertError("Can't leave household", cause);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-canvas dark:bg-graphite">
       <ScrollView
@@ -103,6 +143,11 @@ export default function SettingsScreen() {
                 member={member}
                 isMe={member.id === me?.id}
                 onEditNickname={openNickname}
+                onManage={
+                  me?.role === "owner" && member.id !== me?.id
+                    ? () => setManaging(member)
+                    : undefined
+                }
               />
             ))}
 
@@ -166,7 +211,7 @@ export default function SettingsScreen() {
           </Text>
           {offline ? (
             <Text className="font-sans text-sm text-muted dark:text-silver">
-              Signing out and archiving need a connection.
+              Signing out and household changes need a connection.
             </Text>
           ) : null}
           <BrandButton
@@ -176,6 +221,15 @@ export default function SettingsScreen() {
             disabled={busy || offline}
             onPress={signOut}
           />
+          {canLeave ? (
+            <BrandButton
+              fullWidth
+              variant="outlined"
+              label="Leave household"
+              disabled={busy || offline}
+              onPress={() => setLeaving(true)}
+            />
+          ) : null}
           {me?.role === "owner" ? (
             <BrandButton
               fullWidth
@@ -214,6 +268,24 @@ export default function SettingsScreen() {
         onClose={() => setConfirming(false)}
         onArchive={archive}
       />
+
+      <LeaveSheet
+        visible={leaving}
+        name={household?.name}
+        busy={busy}
+        onClose={() => setLeaving(false)}
+        onLeave={leave}
+      />
+
+      {managing ? (
+        <MemberSheet
+          member={managing}
+          busy={roleBusy}
+          offline={offline}
+          onClose={() => setManaging(null)}
+          onChangeRole={changeRole}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
