@@ -15,6 +15,11 @@ import { LeaveSheet } from "@/features/household/components/LeaveSheet";
 import { MemberRow } from "@/features/household/components/MemberRow";
 import { MemberSheet } from "@/features/household/components/MemberSheet";
 import { NicknameSheet } from "@/features/household/components/NicknameSheet";
+import {
+  exportFileName,
+  saveExpensesCsv,
+  shareExpensesCsv,
+} from "@/features/household/export";
 import { useHousehold } from "@/features/household/HouseholdProvider";
 import type { Member, Role } from "@/features/household/types";
 import { useAsyncLock } from "@/lib/useAsyncLock";
@@ -44,6 +49,8 @@ export default function SettingsScreen() {
   const [roleBusy, setRoleBusy] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [savingFile, setSavingFile] = useState(false);
 
   const canLeave = !!me && (me.role === "member" || members.length > 1);
   const runLocked = useAsyncLock();
@@ -161,6 +168,59 @@ export default function SettingsScreen() {
       }
     });
 
+  const saveCsv = () =>
+    runLocked(async () => {
+      if (!household) return;
+
+      setSavingFile(true);
+      try {
+        const result = await saveExpensesCsv(
+          id,
+          household.name,
+          household.currency_code,
+        );
+        if (result === "empty") {
+          Alert.alert(
+            "Nothing to export yet",
+            "Add an expense first, then try again.",
+          );
+        } else if (result === "saved") {
+          Alert.alert(
+            "Saved",
+            `Saved ${exportFileName(household.name)} to the folder you picked.`,
+          );
+        }
+      } catch (cause) {
+        alertError("Can't save the CSV", cause);
+      } finally {
+        setSavingFile(false);
+      }
+    });
+
+  const shareCsv = () =>
+    runLocked(async () => {
+      if (!household) return;
+
+      setExporting(true);
+      try {
+        const shared = await shareExpensesCsv(
+          id,
+          household.name,
+          household.currency_code,
+        );
+        if (!shared) {
+          Alert.alert(
+            "Nothing to export yet",
+            "Add an expense first, then try again.",
+          );
+        }
+      } catch (cause) {
+        alertError("Can't share the CSV", cause);
+      } finally {
+        setExporting(false);
+      }
+    });
+
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-canvas dark:bg-graphite">
       <ScrollView
@@ -231,6 +291,30 @@ export default function SettingsScreen() {
               </Text>
             </View>
           </View>
+        </View>
+
+        <View className="gap-3">
+          <Text className="font-sans-semibold text-xl text-graphite dark:text-on-graphite">
+            Data
+          </Text>
+          <BrandButton
+            fullWidth
+            label={savingFile ? "Saving…" : "Save to device"}
+            disabled={savingFile || exporting}
+            onPress={saveCsv}
+          />
+          <BrandButton
+            fullWidth
+            variant="outlined"
+            label={exporting ? "Sharing…" : "Share CSV"}
+            disabled={savingFile || exporting}
+            onPress={shareCsv}
+          />
+          <Text className="font-sans text-sm text-muted dark:text-silver">
+            Every expense in this household, including voided ones. Save picks a
+            folder on this device; share opens the Android share sheet. Both
+            read what&apos;s saved here, so they work offline.
+          </Text>
         </View>
 
         <View className="gap-3">

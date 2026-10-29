@@ -64,6 +64,15 @@ export const EXPENSES_SQL = `
     AND datetime(e.spent_at) >= datetime(?) AND datetime(e.spent_at) < datetime(?)
   ORDER BY e.spent_at DESC`;
 
+export const EXPORT_EXPENSES_SQL = `
+  SELECT e.spent_at, e.title, e.category, e.amount, e.note,
+         e.voided_at, e.voided_reason, m.nickname AS spender_nickname
+  FROM expense e
+  LEFT JOIN household_member m
+    ON m.household_id = e.household_id AND m.user_id = e.spender_id
+  WHERE e.household_id = ?
+  ORDER BY e.spent_at ASC`;
+
 export const EDIT_EXPENSE_SQL = `
   SELECT id, title, amount, category, note, spent_at
   FROM expense
