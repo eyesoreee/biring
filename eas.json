@@ -1,7 +1,13 @@
 {
+  "cli": { "appVersionSource": "remote" },
   "build": {
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://lyaqhcrrbplllsrxmbfn.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_NrVm74U7Bw3FgDrExjtGQg_tFSWa4JN",
+        "EXPO_PUBLIC_POWERSYNC_URL": "https://6acde2eff0708554f16e0d6a.powersync.journeyapps.com"
+      }
     },
     "production": {}
   },
